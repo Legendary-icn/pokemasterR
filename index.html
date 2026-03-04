@@ -21,27 +21,27 @@
         .top-nav button.active { color: var(--neon); background: rgba(0, 242, 255, 0.1); }
         .top-nav button i { display: block; font-size: 1.2rem; margin-bottom: 4px; }
 
-        #vision-container { position: relative; width: 100%; aspect-ratio: 3/4; background: #000; border-bottom: 1px solid #333; display: none; }
+        #vision-container { position: relative; width: 100%; aspect-ratio: 3/4; background: #000; border-bottom: 1px solid #333; display: block; }
         video { width: 100%; height: 100%; object-fit: cover; }
         #ghost-overlay { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 85%; opacity: 0.5; pointer-events: none; display: none;
         }
 
-        .cam-bar { background: #111; padding: 10px; display: none; align-items: center; gap: 10px; font-size: 0.8rem; }
-        select { background: #222; color: var(--neon); border: 1px solid var(--neon); padding: 5px; border-radius: 5px; flex: 1; }
+        .cam-bar { background: #111; padding: 10px; display: flex; align-items: center; gap: 10px; font-size: 0.8rem; }
+        select { background: #222; color: var(--neon); border: 1px solid var(--neon); padding: 5px; border-radius: 5px; flex: 1; font-size: 14px; }
 
         .content { padding: 15px; }
         .panel { display: none; }
         .active-panel { display: block; animation: fadeIn 0.4s; }
 
         .search-box { display: flex; gap: 8px; margin-bottom: 15px; }
-        input { flex: 1; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 8px; outline: none; }
+        input { flex: 1; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 8px; outline: none; font-size: 16px; }
         .btn { background: var(--neon); color: #000; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; }
         
         .res-card { background: var(--panel); padding: 12px; border-radius: 12px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; border: 1px solid #333; }
         .res-card img { width: 60px; border-radius: 4px; }
-        .price { color: #00ff88; font-weight: bold; }
+        .price { color: #00ff88; font-weight: bold; font-size: 1.1rem; }
 
         .deck-card { background: var(--panel); border-radius: 12px; padding: 15px; margin-bottom: 15px; border-left: 4px solid var(--neon); }
         .deck-list { display: none; margin-top: 10px; font-size: 0.85rem; color: #aaa; background: #000; padding: 10px; border-radius: 8px; }
@@ -122,11 +122,10 @@
 <script>
     let activeStream;
     let vfGhostImg = "";
-    // --- TU LLAVE DEFINITIVA (ACTUALIZADA SEGÚN LA IMAGEN) ---
-    const SCRYDEX_API_KEY = "52089a370a73f782ebfd496bc5f101ac5313c1c573043270f8d1aff00db5e3e4";;
+    // LLAVE ACTUALIZADA SEGÚN TU CONFIGURACIÓN
+    const SCRYDEX_API_KEY = "52089a370a73f782ebfd496bc5f101ac5313c1c573043270f8d1aff00db5e3e4";
     const BACK_IMAGE = "https://images.pokemontcg.io/swsh1/back.png";
 
-    // --- LOGICA DE PESTAÑAS Y CÁMARA ---
     function showTab(tabId, btn) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active-panel'));
         document.querySelectorAll('.top-nav button').forEach(b => b.classList.remove('active'));
@@ -148,11 +147,13 @@
     }
 
     async function listCameras() {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoIn = devices.filter(d => d.kind === 'videoinput');
-        const select = document.getElementById('camSelect');
-        select.innerHTML = videoIn.map(d => `<option value="${d.deviceId}">${d.label || 'Cam ' + (select.length+1)}</option>`).join('');
-        initCamera();
+        try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoIn = devices.filter(d => d.kind === 'videoinput');
+            const select = document.getElementById('camSelect');
+            select.innerHTML = videoIn.map((d, i) => `<option value="${d.deviceId}">${d.label || 'Cámara ' + (i+1)}</option>`).join('');
+            if (videoIn.length > 0) initCamera();
+        } catch (e) { alert("Error al listar cámaras. Asegúrate de dar permisos."); }
     }
 
     async function initCamera() {
@@ -173,7 +174,6 @@
         }
     }
 
-    // --- BUSQUEDA ---
     async function searchScrydex(type) {
         const inputId = type === 'val' ? 'searchInput' : 'vfInput';
         const q = document.getElementById(inputId).value;
@@ -186,10 +186,11 @@
             const { data } = await res.json();
             
             if (type === 'val') {
+                if(data.length === 0) { alert("No se encontró la carta"); return; }
                 document.getElementById('results-val').innerHTML = data.map(c => `
                     <div class="res-card">
                         <img src="${c.images.small}">
-                        <div style="flex:1"><b>${c.name}</b><br><span class="price">$${c.tcgplayer?.latestPrices?.holofoil?.market || 'N/A'}</span></div>
+                        <div style="flex:1"><b>${c.name}</b><br><span class="price">$${c.tcgplayer?.latestPrices?.holofoil?.market || c.tcgplayer?.latestPrices?.normal?.market || 'N/A'}</span></div>
                         <button class="btn" style="font-size:0.7rem" onclick="saveToDex('${c.name}', '${c.images.small}')">+</button>
                     </div>
                 `).join('');
@@ -200,45 +201,47 @@
                     alert("Imagen cargada para análisis V/F");
                 }
             }
-        } catch (e) { alert("Error de red"); }
+        } catch (e) { alert("Error de red: Revisa tu conexión."); }
     }
 
-    // --- V/F CHECK ---
     function toggleGhost(mode) {
         const g = document.getElementById('ghost-overlay');
+        if(!vfGhostImg && mode === 'front') {
+            alert("Escribe nombre y número arriba primero");
+            return;
+        }
         g.style.display = 'block';
         g.src = (mode === 'front') ? vfGhostImg : BACK_IMAGE;
-        if(!vfGhostImg && mode === 'front') alert("Escribe nombre y número arriba primero");
     }
 
-    // --- DECKS ---
     function toggleDeck(id) {
         const el = document.getElementById(id);
         el.style.display = el.style.display === 'block' ? 'none' : 'block';
     }
 
-    // --- MI DEX ---
     function saveToDex(name, img) {
         let dex = JSON.parse(localStorage.getItem('pokedex_v7') || '[]');
         dex.push({ id: Date.now(), name, img });
         localStorage.setItem('pokedex_v7', JSON.stringify(dex));
-        alert("¡Guardada!");
+        alert("¡Guardada en Mi Dex!");
     }
 
     function renderDex() {
         const dex = JSON.parse(localStorage.getItem('pokedex_v7') || '[]');
-        document.getElementById('dex-list').innerHTML = dex.map(c => `
+        const container = document.getElementById('dex-list');
+        if(dex.length === 0) { container.innerHTML = "<p>Tu Dex está vacío</p>"; return; }
+        container.innerHTML = dex.map(c => `
             <div class="dex-item">
                 <img src="${c.img}">
-                <p style="margin:5px 0">${c.name}</p>
+                <p style="margin:5px 0; font-size:0.7rem;">${c.name}</p>
             </div>
         `).join('');
     }
 
-    // Iniciar con la cámara visible en la pestaña por defecto
-    document.getElementById('vision-container').style.display = 'block';
-    document.getElementById('cam-controls').style.display = 'flex';
-    listCameras();
+    // Inicialización al cargar
+    window.onload = () => {
+        listCameras();
+    };
 </script>
 </body>
 </html>
