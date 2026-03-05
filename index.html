@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PokeMaster Elite v10.0 - Optimized</title>
+    <title>PokeMaster Elite v10.0 - Anti-CORS Edition</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --neon: #00f2ff; --red: #ff1f1f; --bg: #0d0d0d; --panel: #1a1a1e; --text: #e0e0e0; }
@@ -86,15 +86,14 @@
 
     <div id="tab-vf" class="panel">
         <div class="search-box">
-            <input type="text" id="vfInput" placeholder="Nombre (Ej: Venonat)">
-            <button class="btn" onclick="masterSearch('vf')">BUSCAR</button>
+            <input type="text" id="vfInput" placeholder="Nombre (Ej: Mewtwo 150)">
+            <button class="btn" onclick="masterSearch('vf')">CARGAR</button>
         </div>
         <div style="display:flex; gap:10px; margin-bottom:15px">
             <button class="btn" style="flex:1" onclick="toggleGhost('front')">FRENTE</button>
             <button class="btn" style="flex:1; background:#333; color:white;" onclick="toggleGhost('back')">REVERSO</button>
         </div>
         <input type="range" min="0" max="100" value="50" style="width:100%; accent-color: var(--neon);" oninput="document.getElementById('ghost-overlay').style.opacity = this.value/100">
-        <div id="results-vf" style="margin-top: 15px;"></div>
     </div>
 
     <div id="tab-dex" class="panel">
@@ -113,11 +112,29 @@
         </div>
         <div class="deck-card">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <b>Regidrago VSTAR</b>
+                <b>Regidrago VSTAR (Meta)</b>
                 <button class="btn" style="padding:5px 10px" onclick="toggleDeck('list-drago')">Ver</button>
             </div>
             <div id="list-drago" class="deck-list">
-                • 3 Regidrago VSTAR / 3 V<br>• 2 Teal Mask Ogerpon ex<br>• 1 Giratina VSTAR / 1 Dragapult ex<br>• 4 Professor's Research / 4 Iono
+                • 3 Regidrago VSTAR / 3 V<br>• 4 Teal Mask Ogerpon ex<br>• 1 Giratina VSTAR / 1 Dragapult ex<br>• 4 Professor's Research / 4 Iono
+            </div>
+        </div>
+        <div class="deck-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <b>Gardevoir ex (Meta)</b>
+                <button class="btn" style="padding:5px 10px" onclick="toggleDeck('list-garde')">Ver</button>
+            </div>
+            <div id="list-garde" class="deck-list">
+                • 2 Gardevoir ex (SVI 086)<br>• 4 Kirlia (SIT 068) / 4 Ralts<br>• 2 Drifloon / 1 Scream Tail<br>• 1 Radiant Greninja<br>• 4 Iono / 4 Buddy-Buddy Poffin
+            </div>
+        </div>
+        <div class="deck-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <b>Chien-Pao ex (Meta)</b>
+                <button class="btn" style="padding:5px 10px" onclick="toggleDeck('list-chien')">Ver</button>
+            </div>
+            <div id="list-chien" class="deck-list">
+                • 2 Chien-Pao ex<br>• 2 Baxcalibur / 2 Frigibax<br>• 1 Radiant Greninja / 1 Iron Hands ex<br>• 4 Superior Energy Retrieval<br>• 4 Irida / 2 PokéStop
             </div>
         </div>
     </div>
@@ -141,7 +158,7 @@
     }
 
     async function initCamera() {
-        if (activeStream) activeStream.getTracks().forEach(t => t.stop());
+        stopCamera(); // Asegura que se apague cualquier cámara previa
         const id = document.getElementById('camSelect').value;
         try {
             activeStream = await navigator.mediaDevices.getUserMedia({ 
@@ -151,97 +168,103 @@
         } catch (e) { console.error("Fallo stream:", e); }
     }
 
+    // ARREGLADO: Función que detiene el hardware correctamente
     function stopCamera() {
         if (activeStream) {
             activeStream.getTracks().forEach(track => track.stop());
             activeStream = null;
+            document.getElementById('video').srcObject = null; // Limpia el elemento de video
         }
     }
 
-    // --- NAVEGACIÓN ---
+    // --- NAVEGACIÓN Y CONTROL DE CÁMARA ---
     function showTab(tabId, btn) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active-panel'));
         document.querySelectorAll('.top-nav button').forEach(b => b.classList.remove('active'));
         document.getElementById('tab-' + tabId).classList.add('active-panel');
         btn.classList.add('active');
 
+        // Lógica corregida para la cámara
         if (['val', 'vf'].includes(tabId)) {
             document.getElementById('vision-container').style.display = 'block';
             document.getElementById('cam-controls').style.display = 'flex';
             if (!activeStream) initCamera();
         } else {
-            stopCamera();
             document.getElementById('vision-container').style.display = 'none';
             document.getElementById('cam-controls').style.display = 'none';
+            stopCamera(); // Apaga la cámara automáticamente aquí
         }
+        
         if(tabId === 'dex') renderDex();
     }
 
-    // --- BÚSQUEDA ---
+    // --- BÚSQUEDA ANTI-ERROR DE RED ---
     async function masterSearch(type) {
         const q = document.getElementById(type === 'val' ? 'searchInput' : 'vfInput').value;
         if(!q) return;
 
-        const resultsVal = document.getElementById('results-val');
-        const resultsVf = document.getElementById('results-vf');
-
-        if(type === 'val') resultsVal.innerHTML = "<p style='color:var(--neon)'>Buscando...</p>";
-        if(type === 'vf') resultsVf.innerHTML = "<p style='color:var(--neon)'>Buscando referencias...</p>";
+        const resultsDiv = document.getElementById('results-val');
+        if(type === 'val') resultsDiv.innerHTML = "<p style='color:var(--neon)'>Analizando red...</p>";
 
         try {
-            const baseUrl = `https://api.pokemontcg.io/v2/cards?q=name:"${encodeURIComponent(q.trim())}"*&pageSize=10`;
-            const response = await fetch(baseUrl, { headers: { "X-Api-Key": SCRYDEX_API_KEY } });
-            const json = await response.json();
+            const baseUrl = `https://api.pokemontcg.io/v2/cards?q=name:"${encodeURIComponent(q.trim())}"*&pageSize=5`;
             
-            if(!json.data || json.data.length === 0) {
-                alert("No se encontró nada.");
+            let response = await fetch(baseUrl, { headers: { "X-Api-Key": SCRYDEX_API_KEY } });
+            
+            // Si el intento directo falla (CORS), usamos el proxy
+            if (!response.ok) {
+                const proxy = "https://api.allorigins.win/get?url=";
+                response = await fetch(proxy + encodeURIComponent(baseUrl));
+                const proxyData = await response.json();
+                const json = JSON.parse(proxyData.contents);
+                processResults(json.data, type);
                 return;
             }
 
-            if(type === 'val') {
-                resultsVal.innerHTML = json.data.map(c => `
-                    <div class="res-card">
-                        <img src="${c.images.small}">
-                        <div style="flex:1">
-                            <b>${c.name}</b><br>
-                            <span class="price">$${c.tcgplayer?.latestPrices?.holofoil?.market || c.tcgplayer?.latestPrices?.normal?.market || 'N/A'}</span>
-                        </div>
-                        <button class="btn" onclick="saveToDex('${c.name}', '${c.images.small}')"><i class="fas fa-plus"></i></button>
-                    </div>
-                `).join('');
-            } else {
-                // AQUÍ ESTÁ EL ARREGLO PARA VENONAT / REFERENCIAS
-                resultsVf.innerHTML = json.data.map(c => `
-                    <div class="res-card" onclick="prepareGhost('${c.images.large}')" style="cursor:pointer; border: 1px solid #444;">
-                        <img src="${c.images.small}">
-                        <div style="flex:1">
-                            <b>${c.name}</b><br>
-                            <small>${c.set.name} #${c.number}</small>
-                        </div>
-                        <span style="color:var(--neon); font-size:0.7rem;">USAR GHOST</span>
-                    </div>
-                `).join('');
-            }
+            const json = await response.json();
+            processResults(json.data, type);
+
         } catch (e) {
-            alert("Error de conexión. Revisa el nombre.");
+            console.error(e);
+            if(type === 'val') resultsDiv.innerHTML = "<p style='color:red'>Error Crítico. Intenta con un nombre más corto.</p>";
         }
     }
 
-    // --- GHOST ---
-    function prepareGhost(url) {
-        vfGhostImg = url;
-        toggleGhost('front');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+    function processResults(data, type) {
+        if(!data || data.length === 0) {
+            alert("Carta no encontrada");
+            if(type === 'val') document.getElementById('results-val').innerHTML = "";
+            return;
+        }
+        if(type === 'val') {
+            // ARREGLADO: La estructura del API usa prices, no latestPrices
+            document.getElementById('results-val').innerHTML = data.map(c => {
+                const price = c.tcgplayer?.prices?.holofoil?.market || c.tcgplayer?.prices?.normal?.market || 'N/A';
+                return `
+                <div class="res-card">
+                    <img src="${c.images.small}">
+                    <div style="flex:1">
+                        <b>${c.name}</b><br>
+                        <span class="price">$${price}</span>
+                    </div>
+                    <button class="btn" style="font-size:0.7rem" onclick="saveToDex('${c.name.replace(/'/g, "\\'")}', '${c.images.small}')"><i class="fas fa-plus"></i></button>
+                </div>
+            `}).join('');
+        } else {
+            vfGhostImg = data[0].images.large;
+            toggleGhost('front');
+            alert("Guía V/F cargada.");
+        }
     }
 
+    // --- FUNCIONES EXTRA ---
     function toggleGhost(mode) {
         const g = document.getElementById('ghost-overlay');
-        if(!vfGhostImg && mode === 'front') { alert("Busca una carta abajo primero."); return; }
+        if(!vfGhostImg && mode === 'front') { alert("Busca una carta primero."); return; }
         g.style.display = 'block';
         g.src = (mode === 'front') ? vfGhostImg : BACK_IMAGE;
     }
 
-    // --- DECKS Y STORAGE ---
     function toggleDeck(id) {
         const el = document.getElementById(id);
         el.style.display = el.style.display === 'block' ? 'none' : 'block';
