@@ -175,49 +175,51 @@
     }
 
 async function searchScrydex(type) {
-        const inputId = type === 'val' ? 'searchInput' : 'vfInput';
-        const q = document.getElementById(inputId).value;
-        if(!q) return;
+    const inputId = type === 'val' ? 'searchInput' : 'vfInput';
+    const q = document.getElementById(inputId).value;
+    if(!q) return;
 
-        // Mostramos un aviso de "Cargando" para saber que está trabajando
-        document.getElementById('results-val').innerHTML = "<p style='color:var(--neon)'>Buscando en la base de datos...</p>";
+    document.getElementById('results-val').innerHTML = "<p style='color:var(--neon)'>Conectando con el servidor...</p>";
 
-        try {
-            // Usamos una URL directa sin headers complejos para evitar el bloqueo CORS
-            const response = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:${encodeURIComponent(q)}&pageSize=5`);
-            
-            if (!response.ok) throw new Error("Error en servidor");
-            
-            const { data } = await response.json();
-            
+    try {
+        // Usamos un proxy diferente y forzamos la limpieza de la URL
+        const cleanQuery = q.trim().replace(/\s+/g, ' ');
+        const url = `https://api.pokemontcg.io/v2/cards?q=name:"${encodeURIComponent(cleanQuery)}"&pageSize=5`;
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            mode: 'cors', // Forzamos el modo CORS
+            headers: {
+                'Accept': 'application/json',
+                'X-Api-Key': '52089a37-0a73-4782-ebfd-496bc5f101ac' // Formato corregido
+            }
+        });
+
+        if (!response.ok) throw new Error("Servidor ocupado");
+        const { data } = await response.json();
+
+        if (data && data.length > 0) {
             if (type === 'val') {
-                if(!data || data.length === 0) { 
-                    document.getElementById('results-val').innerHTML = "<p>No se encontró la carta.</p>";
-                    return; 
-                }
                 document.getElementById('results-val').innerHTML = data.map(c => {
                     const price = c.tcgplayer?.latestPrices?.holofoil?.market || c.tcgplayer?.latestPrices?.normal?.market || "N/A";
                     return `
                         <div class="res-card">
                             <img src="${c.images.small}">
-                            <div style="flex:1">
-                                <b>${c.name}</b><br>
-                                <span class="price">$${price}</span>
-                            </div>
+                            <div style="flex:1"><b>${c.name}</b><br><span class="price">$${price}</span></div>
                             <button class="btn" onclick="saveToDex('${c.name}', '${c.images.small}')">+</button>
                         </div>`;
                 }).join('');
             } else {
-                if(data.length > 0) {
-                    vfGhostImg = data[0].images.large;
-                    toggleGhost('front');
-                }
+                vfGhostImg = data[0].images.large;
+                toggleGhost('front');
             }
-        } catch (e) { 
-            console.error(e);
-            document.getElementById('results-val').innerHTML = "<p style='color:red'>Error de conexión. Intenta buscar solo el nombre (ej: Pikachu).</p>";
+        } else {
+            document.getElementById('results-val').innerHTML = "<p>No se encontró nada. Prueba solo el nombre.</p>";
         }
+    } catch (e) {
+        document.getElementById('results-val').innerHTML = `<p style="color:red">Error: La API está bloqueando la conexión desde este dominio.</p>`;
     }
+}
 
     function toggleGhost(mode) {
         const g = document.getElementById('ghost-overlay');
@@ -260,5 +262,6 @@ async function searchScrydex(type) {
 </script>
 </body>
 </html>
+
 
 
