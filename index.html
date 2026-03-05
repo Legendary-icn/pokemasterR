@@ -174,34 +174,49 @@
         }
     }
 
-    async function searchScrydex(type) {
+async function searchScrydex(type) {
         const inputId = type === 'val' ? 'searchInput' : 'vfInput';
         const q = document.getElementById(inputId).value;
         if(!q) return;
 
+        // Mostramos un aviso de "Cargando" para saber que está trabajando
+        document.getElementById('results-val').innerHTML = "<p style='color:var(--neon)'>Buscando en la base de datos...</p>";
+
         try {
-            const res = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent('https://api.pokemontcg.io/v2/cards?q=name:"' + q + '"&pageSize=5'), {
-                headers: { "X-Api-Key": SCRYDEX_API_KEY }
-            });
-            const { data } = await res.json();
+            // Usamos una URL directa sin headers complejos para evitar el bloqueo CORS
+            const response = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:${encodeURIComponent(q)}&pageSize=5`);
+            
+            if (!response.ok) throw new Error("Error en servidor");
+            
+            const { data } = await response.json();
             
             if (type === 'val') {
-                if(data.length === 0) { alert("No se encontró la carta"); return; }
-                document.getElementById('results-val').innerHTML = data.map(c => `
-                    <div class="res-card">
-                        <img src="${c.images.small}">
-                        <div style="flex:1"><b>${c.name}</b><br><span class="price">$${c.tcgplayer?.latestPrices?.holofoil?.market || c.tcgplayer?.latestPrices?.normal?.market || 'N/A'}</span></div>
-                        <button class="btn" style="font-size:0.7rem" onclick="saveToDex('${c.name}', '${c.images.small}')">+</button>
-                    </div>
-                `).join('');
+                if(!data || data.length === 0) { 
+                    document.getElementById('results-val').innerHTML = "<p>No se encontró la carta.</p>";
+                    return; 
+                }
+                document.getElementById('results-val').innerHTML = data.map(c => {
+                    const price = c.tcgplayer?.latestPrices?.holofoil?.market || c.tcgplayer?.latestPrices?.normal?.market || "N/A";
+                    return `
+                        <div class="res-card">
+                            <img src="${c.images.small}">
+                            <div style="flex:1">
+                                <b>${c.name}</b><br>
+                                <span class="price">$${price}</span>
+                            </div>
+                            <button class="btn" onclick="saveToDex('${c.name}', '${c.images.small}')">+</button>
+                        </div>`;
+                }).join('');
             } else {
                 if(data.length > 0) {
                     vfGhostImg = data[0].images.large;
                     toggleGhost('front');
-                    alert("Imagen cargada para análisis V/F");
                 }
             }
-        } catch (e) { alert("Error de red: Revisa tu conexión."); }
+        } catch (e) { 
+            console.error(e);
+            document.getElementById('results-val').innerHTML = "<p style='color:red'>Error de conexión. Intenta buscar solo el nombre (ej: Pikachu).</p>";
+        }
     }
 
     function toggleGhost(mode) {
@@ -245,4 +260,5 @@
 </script>
 </body>
 </html>
+
 
