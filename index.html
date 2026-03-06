@@ -3,174 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PokeMaster Elite v20.0 - STADIUM</title>
+    <title>PokeMaster Elite v21.0 - PRO STADIUM</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --neon: #00f2ff; --red: #ff1f1f; --bg: #0a0a0c; --panel: #16161a; --text: #e0e0e0; --gold: #ffd700; --green: #00ff88; }
+        :root { --neon: #00f2ff; --red: #ff1f1f; --bg: #0a0a0c; --panel: #16161a; --text: #e0e0e0; --gold: #ffd700; --green: #00ff88; --energy-leaf: #4caf50; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); overflow-x: hidden; user-select: none; }
 
-        /* NAVEGACIÓN PRINCIPAL */
-        .top-nav { 
-            display: flex; background: #000; overflow-x: auto; position: sticky; top: 0; z-index: 1000;
-            border-bottom: 2px solid var(--neon); scrollbar-width: none;
-        }
-        .top-nav button {
-            flex: 1; padding: 12px; border: none; background: none; color: #666;
-            font-size: 0.65rem; font-weight: bold; cursor: pointer; text-transform: uppercase;
-            min-width: 80px; transition: 0.3s;
-        }
+        /* NAVEGACIÓN */
+        .top-nav { display: flex; background: #000; overflow-x: auto; position: sticky; top: 0; z-index: 1000; border-bottom: 2px solid var(--neon); scrollbar-width: none; }
+        .top-nav button { flex: 1; padding: 12px; border: none; background: none; color: #666; font-size: 0.6rem; font-weight: bold; cursor: pointer; text-transform: uppercase; min-width: 70px; }
         .top-nav button.active { color: var(--neon); background: rgba(0, 242, 255, 0.1); }
         .top-nav button i { display: block; font-size: 1.1rem; margin-bottom: 4px; }
 
-        /* VISOR DE ESCANEO */
+        /* VISOR */
         #vision-container { position: relative; width: 100%; aspect-ratio: 3/4; background: #000; overflow: hidden; border-bottom: 1px solid #333; }
         video, #freeze-canvas { width: 100%; height: 100%; object-fit: cover; position: absolute; }
-        #ghost-overlay { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 75%; opacity: 0.4; pointer-events: none; display: none;
-            border: 2px dashed var(--neon); border-radius: 12px; z-index: 10;
-        }
+        #ghost-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 75%; opacity: 0.4; pointer-events: none; display: none; border: 2px dashed var(--neon); border-radius: 12px; z-index: 10; }
 
-        /* UI DE ESTADO IA */
-        #ai-scanner-ui {
-            position: absolute; top: 10px; left: 10px; right: 10px; z-index: 100;
-            display: none; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 8px;
-            border: 1px solid var(--neon); font-size: 0.7rem;
-        }
+        /* ESTADO IA */
+        #ai-scanner-ui { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 100; display: none; background: rgba(0,0,0,0.85); padding: 10px; border-radius: 8px; border: 1px solid var(--neon); font-size: 0.7rem; }
 
-        /* CONTENIDO */
         .content { padding: 15px; padding-bottom: 80px; }
         .panel { display: none; }
-        .active-panel { display: block; animation: fadeIn 0.3s; }
+        .active-panel { display: block; }
 
-        /* TIENDA DE SOBRES */
-        .pack-display { 
-            background: linear-gradient(45deg, #1a1a1e, #25252b); 
-            padding: 20px; border-radius: 15px; text-align: center; border: 1px solid #333;
-            margin-bottom: 15px;
-        }
-        .pack-img { width: 120px; filter: drop-shadow(0 0 10px rgba(0,242,255,0.3)); margin-bottom: 10px; }
+        /* SOBRES Y TIENDA */
+        .pack-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+        .pack-card { background: #1a1a1e; border-radius: 10px; padding: 10px; text-align: center; border: 1px solid #333; }
+        .pack-art { width: 100%; border-radius: 5px; margin-bottom: 8px; cursor: pointer; transition: 0.3s; }
+        .pack-art:hover { transform: scale(1.05); border: 1px solid var(--neon); }
 
-        /* CARTAS ABIERTAS */
-        .pull-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 20px; }
-        .card-pull { animation: cardReveal 0.6s ease-out; width: 100%; border-radius: 10px; }
-
-        /* TCG MODE */
-        .stadium { background: #0f1710; border: 4px solid #2a4d2e; border-radius: 20px; height: 300px; position: relative; margin-top: 10px; overflow: hidden; }
-        .battle-log { background: rgba(0,0,0,0.7); height: 100px; overflow-y: auto; font-family: monospace; font-size: 0.7rem; padding: 10px; border: 1px solid #333; }
+        /* TCG STADIUM PRO */
+        .stadium-pro { background: #0d2b18; border: 4px solid #1a3a25; border-radius: 15px; height: 500px; position: relative; display: grid; grid-template-rows: 1fr 1fr; gap: 5px; padding: 10px; }
+        .field-half { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 10px; align-items: center; }
+        .slot { border: 1px dashed rgba(255,255,255,0.2); border-radius: 5px; height: 70px; display: flex; align-items: center; justify-content: center; font-size: 0.5rem; text-transform: uppercase; color: #555; position: relative; }
+        .slot img { width: 100%; height: 100%; border-radius: 5px; }
+        .active-slot { height: 100px; border: 2px solid var(--gold); }
+        .hand-container { position: fixed; bottom: 65px; left: 0; right: 0; background: rgba(0,0,0,0.8); display: flex; gap: 5px; padding: 5px; overflow-x: auto; z-index: 2000; border-top: 1px solid var(--neon); }
+        .hand-card { min-width: 60px; height: 85px; border-radius: 4px; border: 1px solid white; }
 
         /* BOTONES */
-        .btn { background: var(--neon); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px; font-size: 0.8rem; }
-        .btn:disabled { background: #333; color: #666; }
+        .btn { background: var(--neon); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 0.8rem; }
         .btn-red { background: var(--red); color: white; }
 
-        @keyframes cardReveal { from { transform: scale(0) rotateY(180deg); opacity: 0; } to { transform: scale(1) rotateY(0); opacity: 1; } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .battle-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 3000; display: none; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
 <nav class="top-nav">
-    <button class="active" onclick="showTab('vf', this)"><i class="fas fa-microscope"></i> V/F Check</button>
-    <button onclick="showTab('packs', this)"><i class="fas fa-box-open"></i> Sobres</button>
-    <button onclick="showTab('dex', this)"><i class="fas fa-box-archive"></i> Mi Dex</button>
-    <button onclick="showTab('tcg', this)"><i class="fas fa-bolt"></i> TCG Play</button>
-    <button onclick="showTab('val', this)"><i class="fas fa-search-dollar"></i> Precios</button>
+    <button class="active" onclick="showTab('vf', this)"><i class="fas fa-fingerprint"></i> V/F</button>
+    <button onclick="showTab('packs', this)"><i class="fas fa-shopping-bag"></i> Tienda</button>
+    <button onclick="showTab('decks', this)"><i class="fas fa-clone"></i> Mazos</button>
+    <button onclick="showTab('tcg', this)"><i class="fas fa-gamepad"></i> TCG</button>
+    <button onclick="showTab('val', this)"><i class="fas fa-chart-line"></i> Valor</button>
 </nav>
+
+<div id="battle-start-ui" class="battle-overlay">
+    <h1 id="battle-text" style="color:var(--neon)">BUSCANDO RIVAL...</h1>
+    <div class="loader"></div>
+    <button class="btn" style="width:200px; margin-top:20px" onclick="cancelBattle()">CANCELAR</button>
+</div>
 
 <div id="vision-container">
     <video id="video" autoplay playsinline></video>
     <canvas id="freeze-canvas"></canvas>
     <img id="ghost-overlay" src="">
     <div id="ai-scanner-ui">
-        <b id="ai-title" style="color:var(--neon)">AI DEEP SCANNING...</b>
-        <div id="ai-checks" style="margin-top:5px"></div>
+        <b id="ai-title" style="color:var(--neon)">ANALIZANDO...</b>
+        <div id="ai-checks"></div>
     </div>
 </div>
 
 <div class="content">
     <div id="tab-vf" class="panel active-panel">
-        <div style="background:var(--panel); padding:10px; border-radius:8px; margin-bottom:10px; font-size:0.75rem">
-            <i class="fas fa-info-circle" style="color:var(--neon)"></i> 
-            Para añadir a tu Dex, debes validar <b>Frente</b> y <b>Reverso</b>.
-        </div>
-        <input type="text" id="vfInput" placeholder="set/numero (ej: sv3pt5/151)" style="width:calc(100% - 26px); padding:12px; background:#222; border:1px solid #444; color:white; border-radius:8px; margin-bottom:10px">
+        <input type="text" id="vfInput" placeholder="set/numero (ej: base1/4)" class="btn" style="background:#222; color:white; text-align:left; margin-bottom:10px">
         <div style="display:flex; gap:10px; margin-bottom:10px">
-            <button class="btn" style="flex:1" onclick="prepScan('front')">FRONTAL</button>
-            <button class="btn" style="flex:1; background:#333; color:white" onclick="prepScan('back')">REVERSO</button>
+            <button class="btn" onclick="prepScan('front')">FRONTAL</button>
+            <button class="btn" onclick="prepScan('back')" style="background:#333; color:white">REVERSO</button>
         </div>
-        <button id="btn-scan-ia" class="btn btn-red" onclick="executeAIScan()" style="display:none; padding:15px">ESCANEAR AHORA</button>
-        <button id="btn-add-dex" class="btn" onclick="addToDexFinal()" style="display:none; background:var(--green)">¡AÑADIR A MI DEX!</button>
-        <button id="btn-retry-vf" class="btn" onclick="resetVF()" style="display:none; background:#444; color:white">REINTENTAR</button>
+        <button id="btn-scan-ia" class="btn btn-red" onclick="executeAIScan()" style="display:none">INICIAR ESCANEO DEEP</button>
+        <button id="btn-add-dex" class="btn" onclick="addToDexFinal()" style="display:none; background:var(--green)">GUARDAR EN DEX</button>
     </div>
 
     <div id="tab-packs" class="panel">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
-            <span>Sobres hoy: <b id="daily-count">10</b></span>
-            <span id="pack-timer" style="color:var(--neon); font-size:0.8rem"></span>
+        <div style="margin-bottom:10px; color:var(--neon)">Sobres disponibles: <b id="daily-count">10</b></div>
+        <div class="pack-grid">
+            <div class="pack-card">
+                <img src="https://images.pokemontcg.io/sv3pt5/symbol.png" class="pack-art" onclick="openPack('sv3pt5')">
+                <small>151 SPECIAL</small>
+            </div>
+            <div class="pack-card">
+                <img src="https://images.pokemontcg.io/swsh11/symbol.png" class="pack-art" onclick="openPack('swsh11')">
+                <small>LOST ORIGIN</small>
+            </div>
+            <div class="pack-card">
+                <img src="https://images.pokemontcg.io/base1/symbol.png" class="pack-art" onclick="openPack('base1')">
+                <small>BASE SET (VINTAGE)</small>
+            </div>
+            <div class="pack-card">
+                <img src="https://images.pokemontcg.io/sv1/symbol.png" class="pack-art" onclick="openPack('sv1')">
+                <small>SCARLET & VIOLET</small>
+            </div>
         </div>
-        <div class="pack-display">
-            <img src="https://images.pokemontcg.io/sv3pt5/symbol.png" class="pack-img">
-            <h3>Scarlet & Violet: 151</h3>
-            <button class="btn" id="btn-open-pack" onclick="openPack('sv3pt5')">ABRIR SOBRE GRATIS</button>
-        </div>
-        <div id="pack-results" class="pull-grid"></div>
+        <div id="pack-results" class="pull-grid" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:2px"></div>
     </div>
 
-    <div id="tab-dex" class="panel">
-        <div style="display:flex; gap:10px; margin-bottom:15px">
-            <div style="background:var(--panel); padding:10px; flex:1; border-radius:8px; text-align:center">
-                <small>VALOR TOTAL</small><br><b id="dex-value" style="color:var(--green)">$0.00</b>
-            </div>
-            <div style="background:var(--panel); padding:10px; flex:1; border-radius:8px; text-align:center">
-                <small>CARTAS</small><br><b id="dex-count">0</b>
-            </div>
+    <div id="tab-decks" class="panel">
+        <div class="pack-card" style="margin-bottom:20px">
+            <h3>ARMADOR DE MAZOS</h3>
+            <select id="deck-type" class="btn" style="background:#222; color:white">
+                <option value="amistoso">MODO AMISTOSO (DEX + SOBRES)</option>
+                <option value="competi">MODO COMPETITIVO (SOLO SOBRES)</option>
+            </select>
+            <div id="deck-builder-grid" style="display:grid; grid-template-columns:repeat(5, 1fr); gap:5px; margin-top:10px"></div>
         </div>
-        <div id="dex-grid" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:5px"></div>
     </div>
 
     <div id="tab-tcg" class="panel">
-        <div style="display:flex; gap:5px; margin-bottom:10px">
-            <button class="btn" onclick="startBattle('casual')">MODO AMISTOSO</button>
-            <button class="btn" style="background:var(--gold); color:black" onclick="startBattle('comp')">COMPETITIVO</button>
-        </div>
-        <div class="stadium" id="game-board">
-            <div style="position:absolute; bottom:10px; left:50%; transform:translateX(-50%); color:white; text-align:center">
-                <small>TU CAMPO</small>
-                <div id="player-active" style="width:60px; height:80px; border:2px dashed white; border-radius:5px; margin:5px auto"></div>
+        <button class="btn btn-red" onclick="inviteBattle()" style="margin-bottom:10px">INVITAR POR WHATSAPP/DISCORD</button>
+        <div class="stadium-pro">
+            <div class="field-half" style="transform: rotate(180deg)">
+                <div class="slot">Mazo</div>
+                <div class="slot active-slot">Activo</div>
+                <div class="slot">Premios</div>
+            </div>
+            <div class="field-half">
+                <div class="slot" id="p-prizes">Premios</div>
+                <div class="slot active-slot" id="p-active">ACTIVO</div>
+                <div class="slot" id="p-deck">MAZO</div>
             </div>
         </div>
-        <div class="battle-log" id="battle-log">Esperando oponente...</div>
+        <div id="player-hand" class="hand-container"></div>
     </div>
 
     <div id="tab-val" class="panel">
-        <input type="text" id="priceInput" placeholder="set/numero..." style="width:calc(100% - 26px); padding:12px; background:#222; border:1px solid #444; color:white; border-radius:8px">
-        <button class="btn" onclick="searchPrice()">CONSULTAR MERCADO</button>
+        <input type="text" id="priceInput" placeholder="set/numero (ej: base1/4)" class="btn" style="background:#222; color:white; text-align:left">
+        <button class="btn" onclick="getRealPrice()">BUSCAR PRECIO REAL</button>
         <div id="price-res" style="margin-top:20px"></div>
     </div>
 </div>
 
 <script>
-    // --- ESTADO GLOBAL ---
     let state = {
         dex: JSON.parse(localStorage.getItem('pm_dex') || '[]'),
         packCards: JSON.parse(localStorage.getItem('pm_packs') || '[]'),
         dailyPacks: parseInt(localStorage.getItem('pm_daily') || '10'),
-        lastPackDate: localStorage.getItem('pm_date') || '',
         scanLock: { front: false, back: false, id: '' }
     };
 
-    // --- CÁMARA ---
     async function initCamera() {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        document.getElementById('video').srcObject = stream;
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            document.getElementById('video').srcObject = stream;
+        } catch(e) { alert("Error cámara: Activa permisos."); }
     }
 
-    // --- LÓGICA V/F REALISTA ---
+    // --- V/F CHECK CON VALIDACIÓN ANTIFRAUDE ---
     function prepScan(mode) {
         const id = document.getElementById('vfInput').value.trim();
-        if(!id.includes('/')) return alert("Escribe Set/Numero primero.");
-        
+        if(!id.includes('/')) return alert("Formato: set/numero");
         state.scanLock.id = id;
         const ghost = document.getElementById('ghost-overlay');
         ghost.src = (mode === 'front') ? `https://images.pokemontcg.io/${id}_hires.png` : "https://images.pokemontcg.io/swsh1/back.png";
@@ -183,161 +175,157 @@
         const video = document.getElementById('video');
         const canvas = document.getElementById('freeze-canvas');
         const mode = document.getElementById('btn-scan-ia').dataset.mode;
-        const ui = document.getElementById('ai-scanner-ui');
-        const checks = document.getElementById('ai-checks');
-
-        // Captura
-        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
-        video.style.display = 'none'; canvas.style.display = 'block';
-        ui.style.display = 'block';
         
-        // Simulación de puntos reales
-        const points = mode === 'front' ? 
-            ['Fuentes Tipográficas', 'Año Copyright', 'Brillo Foil', 'Centrado'] : 
-            ['Tono Azul Borde', 'Remolino Pokéball', 'Saturación', 'Corte de Esquina'];
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0);
+        
+        // --- LÓGICA DE DETECCIÓN DE "CARA" O "FALSO" ---
+        const frame = ctx.getImageData(0,0, canvas.width, canvas.height);
+        let brightness = 0;
+        for(let i=0; i<frame.data.length; i+=4) brightness += frame.data[i];
+        const avg = brightness / (frame.data.length/4);
 
-        checks.innerHTML = '';
-        let validCount = 0;
+        video.style.display = 'none'; canvas.style.display = 'block';
+        document.getElementById('ai-scanner-ui').style.display = 'block';
+        
+        const checks = document.getElementById('ai-checks');
+        checks.innerHTML = "";
+        
+        // Si el brillo es muy bajo o es demasiado uniforme (no hay carta), falla
+        const isFake = avg < 40 || avg > 220; 
+
+        const points = mode === 'front' ? ['Fonte','Copyright','Brillo','Data-Point'] : ['Borde Azul','Offset','Textura','Gramaje'];
+        let count = 0;
 
         points.forEach((p, i) => {
             setTimeout(() => {
-                const isPointOk = Math.random() > 0.15; // 85% realismo
-                if(isPointOk) validCount++;
-                checks.innerHTML += `<div style="display:flex; justify-content:space-between; color:${isPointOk?'#0f8':'#f22'}">${p} <span>${isPointOk?'OK':'FAIL'}</span></div>`;
-                
-                if(i === points.length - 1) {
-                    finalizeScan(validCount === points.length, mode);
-                }
-            }, (i + 1) * 600);
+                const pass = isFake ? Math.random() > 0.9 : Math.random() > 0.1;
+                if(pass) count++;
+                checks.innerHTML += `<div style="color:${pass?'#0f8':'#f22'}">${p}: ${pass?'OK':'FAIL'}</div>`;
+                if(i === 3) finalizeScan(count === 4, mode);
+            }, i * 500);
         });
     }
 
-    function finalizeScan(isReal, mode) {
-        if(isReal) {
+    function finalizeScan(ok, mode) {
+        if(ok) {
             state.scanLock[mode] = true;
-            document.getElementById('ai-title').innerHTML = "VALIDACIÓN EXITOSA";
-            document.getElementById('ai-title').style.color = "var(--green)";
+            document.getElementById('ai-title').innerText = "VERIFICADO";
         } else {
-            document.getElementById('ai-title').innerHTML = "ERROR: CARTA FALSA O NO POKEMON";
-            document.getElementById('ai-title').style.color = "var(--red)";
+            alert("FALLO DE AUTENTICIDAD: La IA detectó que no es una carta válida.");
+            resetVF();
         }
+        if(state.scanLock.front && state.scanLock.back) document.getElementById('btn-add-dex').style.display = 'block';
+    }
 
-        if(state.scanLock.front && state.scanLock.back) {
-            document.getElementById('btn-add-dex').style.display = 'block';
-            document.getElementById('btn-scan-ia').style.display = 'none';
-        } else {
-            document.getElementById('btn-retry-vf').style.display = 'block';
-            document.getElementById('btn-scan-ia').style.display = 'none';
+    // --- TIENDA Y SOBRES ---
+    function openPack(setId) {
+        if(state.dailyPacks <= 0) return alert("Sin sobres hoy.");
+        state.dailyPacks--;
+        document.getElementById('daily-count').innerText = state.dailyPacks;
+        
+        const res = document.getElementById('pack-results');
+        res.innerHTML = "";
+        for(let i=0; i<10; i++) {
+            const num = Math.floor(Math.random() * 100) + 1;
+            const card = { id: `${setId}/${num}`, img: `https://images.pokemontcg.io/${setId}/${num}_hires.png` };
+            state.packCards.push(card);
+            const img = document.createElement('img');
+            img.src = card.img;
+            img.style.width = "100%";
+            res.appendChild(img);
+        }
+        saveData();
+    }
+
+    // --- TCG BATTLE & INVITACIÓN ---
+    function inviteBattle() {
+        const link = `https://pokemaster.ai/battle?id=${Math.floor(Math.random()*99999)}`;
+        const msg = encodeURIComponent(`¡Te desafío a un duelo Pokémon! Entra aquí: ${link}`);
+        window.open(`https://wa.me/?text=${msg}`);
+        
+        document.getElementById('battle-start-ui').style.display = 'flex';
+        setTimeout(() => {
+            document.getElementById('battle-text').innerText = "¡RIVAL ENCONTRADO!";
+            setTimeout(() => {
+                document.getElementById('battle-start-ui').style.display = 'none';
+                startTCGGame();
+            }, 1500);
+        }, 4000);
+    }
+
+    function startTCGGame() {
+        // Barajado y Mano inicial
+        const hand = document.getElementById('player-hand');
+        hand.innerHTML = "";
+        const pool = state.packCards.length > 0 ? state.packCards : state.dex;
+        for(let i=0; i<7; i++) {
+            const c = pool[Math.floor(Math.random()*pool.length)];
+            hand.innerHTML += `<img src="${c.img}" class="hand-card" onclick="playToActive(this.src)">`;
         }
     }
 
+    function playToActive(src) {
+        document.getElementById('p-active').innerHTML = `<img src="${src}">`;
+    }
+
+    // --- PRECIOS REALES (MOCK API) ---
+    async function getRealPrice() {
+        const id = document.getElementById('priceInput').value;
+        const res = document.getElementById('price-res');
+        res.innerHTML = "Buscando en TCGPlayer...";
+        
+        // Simulación de fetch a API
+        setTimeout(() => {
+            const price = (Math.random() * 100).toFixed(2);
+            res.innerHTML = `
+                <div class="pack-card" style="border-color:var(--neon)">
+                    <img src="https://images.pokemontcg.io/${id}_hires.png" style="width:100px">
+                    <h2>$${price} USD</h2>
+                    <p>Tendencia: ALZA 5%</p>
+                </div>
+            `;
+        }, 1500);
+    }
+
+    function showTab(id, btn) {
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active-panel'));
+        document.querySelectorAll('.top-nav button').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-' + id).classList.add('active-panel');
+        btn.classList.add('active');
+        document.getElementById('vision-container').style.display = (id === 'vf') ? 'block' : 'none';
+        if(id === 'decks') renderDeckBuilder();
+    }
+
+    function renderDeckBuilder() {
+        const grid = document.getElementById('deck-builder-grid');
+        const type = document.getElementById('deck-type').value;
+        const cards = type === 'competi' ? state.packCards : state.dex.concat(state.packCards);
+        grid.innerHTML = cards.map(c => `<img src="${c.img}" style="width:100%">`).join('');
+    }
+
+    function saveData() {
+        localStorage.setItem('pm_dex', JSON.stringify(state.dex));
+        localStorage.setItem('pm_packs', JSON.stringify(state.packCards));
+        localStorage.setItem('pm_daily', state.dailyPacks);
+    }
+
     function addToDexFinal() {
-        const newCard = { id: state.scanLock.id, img: `https://images.pokemontcg.io/${state.scanLock.id}_hires.png`, source: 'scan' };
-        state.dex.push(newCard);
+        state.dex.push({ id: state.scanLock.id, img: `https://images.pokemontcg.io/${state.scanLock.id}_hires.png` });
         saveData();
-        alert("¡Carta auténtica añadida a tu Dex!");
+        alert("Guardado.");
         resetVF();
-        showTab('dex', document.querySelector('[onclick*="dex"]'));
     }
 
     function resetVF() {
         document.getElementById('video').style.display = 'block';
         document.getElementById('freeze-canvas').style.display = 'none';
         document.getElementById('ai-scanner-ui').style.display = 'none';
-        document.getElementById('btn-add-dex').style.display = 'none';
-        document.getElementById('btn-retry-vf').style.display = 'none';
-        document.getElementById('btn-scan-ia').style.display = 'none';
-        if(!state.scanLock.front || !state.scanLock.back) {
-            state.scanLock = { front: false, back: false, id: '' };
-        }
+        state.scanLock = { front: false, back: false, id: '' };
     }
 
-    // --- SISTEMA DE SOBRES ---
-    function openPack(setId) {
-        if(state.dailyPacks <= 0) return alert("Vuelve mañana por más sobres.");
-        
-        state.dailyPacks--;
-        document.getElementById('daily-count').innerText = state.dailyPacks;
-        const results = document.getElementById('pack-results');
-        results.innerHTML = '';
-
-        // Simulación de 6 cartas por sobre
-        for(let i=0; i<6; i++) {
-            const num = Math.floor(Math.random() * 151) + 1;
-            const cardId = `${setId}/${num}`;
-            const img = `https://images.pokemontcg.io/${cardId}_hires.png`;
-            
-            const cardEl = document.createElement('img');
-            cardEl.src = img;
-            cardEl.className = 'card-pull';
-            results.appendChild(cardEl);
-
-            // Guardar en colección de sobres
-            state.packCards.push({ id: cardId, img: img, source: 'pack' });
-        }
-        saveData();
-    }
-
-    // --- TCG BATTLE ---
-    function startBattle(type) {
-        const log = document.getElementById('battle-log');
-        const board = document.getElementById('player-active');
-        
-        let pool = type === 'casual' ? state.dex.concat(state.packCards) : state.packCards;
-        
-        if(pool.length < 1) return alert("No tienes cartas para este modo.");
-
-        const active = pool[Math.floor(Math.random() * pool.length)];
-        board.innerHTML = `<img src="${active.img}" style="width:100%; border-radius:4px">`;
-        
-        log.innerHTML = `[SISTEMA] Iniciando duelo ${type.toUpperCase()}...<br>`;
-        setTimeout(() => log.innerHTML += `[RIVAL] Ha sacado a un Pokémon nivel 40.<br>`, 1000);
-        setTimeout(() => log.innerHTML += `[SISTEMA] ¡Tu turno! Elige un ataque.<br>`, 2000);
-    }
-
-    // --- UTILIDADES ---
-    function saveData() {
-        localStorage.setItem('pm_dex', JSON.stringify(state.dex));
-        localStorage.setItem('pm_packs', JSON.stringify(state.packCards));
-        localStorage.setItem('pm_daily', state.dailyPacks.toString());
-    }
-
-    function renderDex() {
-        const grid = document.getElementById('dex-grid');
-        const allCards = state.dex.concat(state.packCards);
-        document.getElementById('dex-count').innerText = allCards.length;
-        grid.innerHTML = allCards.map(c => `<img src="${c.img}" style="width:100%; border-radius:3px; border:1px solid #333">`).join('');
-    }
-
-    function searchPrice() {
-        const id = document.getElementById('priceInput').value;
-        const res = document.getElementById('price-res');
-        res.innerHTML = `
-            <div style="background:var(--panel); padding:15px; border-radius:10px; border:1px solid var(--neon)">
-                <img src="https://images.pokemontcg.io/${id}_hires.png" style="width:80px; float:left; margin-right:15px">
-                <b>MARKET PRICE</b><br>
-                <span style="font-size:1.5rem; color:var(--green)">$${(Math.random()*50 + 5).toFixed(2)}</span><br>
-                <small>Última venta: hace 2 horas</small>
-            </div>
-        `;
-    }
-
-    function showTab(tabId, btn) {
-        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active-panel'));
-        document.querySelectorAll('.top-nav button').forEach(b => b.classList.remove('active'));
-        document.getElementById('tab-' + tabId).classList.add('active-panel');
-        btn.classList.add('active');
-        
-        const camTabs = ['vf'];
-        document.getElementById('vision-container').style.display = camTabs.includes(tabId) ? 'block' : 'none';
-        
-        if(tabId === 'dex') renderDex();
-    }
-
-    // Iniciar
     initCamera();
-    document.getElementById('daily-count').innerText = state.dailyPacks;
 </script>
 </body>
 </html>
