@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PokeMaster Elite v16.0 - AI VISION EDITION</title>
+    <title>PokeMaster Elite v15.0 - NO API EDITION</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --neon: #00f2ff; --red: #ff1f1f; --bg: #0d0d0d; --panel: #1a1a1e; --text: #e0e0e0; }
@@ -24,37 +24,33 @@
 
         /* VISOR Y CÁMARA */
         #vision-container { position: relative; width: 100%; aspect-ratio: 3/4; background: #000; border-bottom: 1px solid #333; display: block; overflow: hidden; }
-        video, #scan-canvas { width: 100%; height: 100%; object-fit: cover; position: absolute; top:0; left:0; }
-        #scan-canvas { display: none; z-index: 5; }
-        
+        video { width: 100%; height: 100%; object-fit: cover; }
         #ghost-overlay { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 80%; opacity: 0.5; pointer-events: none; display: none;
             border: 2px solid var(--neon); border-radius: 12px; box-shadow: 0 0 20px var(--neon);
-            z-index: 10; transition: border 0.3s;
-        }
-
-        #scan-status {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            z-index: 20; padding: 8px 15px; border-radius: 20px; font-size: 0.8rem;
-            font-weight: bold; display: none; text-align: center; min-width: 150px;
+            z-index: 10;
         }
 
         .cam-bar { background: #111; padding: 10px; display: flex; align-items: center; gap: 10px; font-size: 0.8rem; }
         select { background: #222; color: var(--neon); border: 1px solid var(--neon); padding: 8px; border-radius: 5px; flex: 1; font-size: 14px; outline: none; }
 
-        /* CONTENIDO */
+        /* CONTENIDO GENERAL */
         .content { padding: 15px; }
         .panel { display: none; }
         .active-panel { display: block; animation: fadeIn 0.4s; }
 
         .search-box { display: flex; gap: 8px; margin-bottom: 15px; }
         input { flex: 1; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 8px; outline: none; font-size: 16px; }
-        .btn { background: var(--neon); color: #000; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; justify-content: center; }
+        .btn { background: var(--neon); color: #000; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; }
 
-        /* DEX Y DECKS (IMÁGENES PEQUEÑAS) */
-        .deck-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
-        .deck-card-img { width: 100%; border-radius: 4px; border: 1px solid #333; }
+        /* RESULTADOS Y CARTAS */
+        .res-card { background: var(--panel); padding: 12px; border-radius: 12px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; border: 1px solid #333; }
+        
+        /* GRID DE DECKS Y DEX */
+        .deck-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+        .deck-card-img { width: 100%; border-radius: 5px; border: 1px solid #333; transition: 0.2s; }
+        .deck-card-img:active { transform: scale(1.5); z-index: 100; position: relative; }
         .deck-title { background: var(--panel); padding: 10px; border-radius: 8px; border-left: 4px solid var(--neon); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -70,21 +66,20 @@
 </nav>
 
 <div id="cam-controls" class="cam-bar">
+    <i class="fas fa-video" style="color: var(--neon)"></i>
     <select id="camSelect" onchange="initCamera()"></select>
     <button class="btn" style="padding: 5px 10px;" onclick="initCamera()"><i class="fas fa-sync-alt"></i></button>
 </div>
 
 <div id="vision-container">
     <video id="video" autoplay playsinline></video>
-    <canvas id="scan-canvas"></canvas>
     <img id="ghost-overlay" src="">
-    <div id="scan-status"></div>
 </div>
 
 <div class="content">
     <div id="tab-val" class="panel active-panel">
         <div class="search-box">
-            <input type="text" id="valInput" placeholder="set/numero (ej: swsh8/229)">
+            <input type="text" id="valInput" placeholder="set/numero (ej: base1/4)">
             <button class="btn" onclick="directLoad('val')"><i class="fas fa-search"></i></button>
         </div>
         <div id="results-val"></div>
@@ -92,21 +87,14 @@
 
     <div id="tab-vf" class="panel">
         <div class="search-box">
-            <input type="text" id="vfInput" placeholder="set/numero...">
-            <button class="btn" onclick="directLoad('vf')">CARGAR</button>
+            <input type="text" id="vfInput" placeholder="set/numero (ej: sv3pt5/151)">
+            <button class="btn" onclick="directLoad('vf')">CARGAR GUÍA</button>
         </div>
-        <div style="display:flex; gap:10px; margin-bottom:10px">
+        <div style="display:flex; gap:10px; margin-bottom:15px">
             <button class="btn" style="flex:1" onclick="toggleGhost('front')">FRENTE</button>
             <button class="btn" style="flex:1; background:#333; color:white;" onclick="toggleGhost('back')">REVERSO</button>
         </div>
-        <input type="range" min="0" max="100" value="50" style="width:100%; accent-color: var(--neon); margin-bottom:15px" oninput="document.getElementById('ghost-overlay').style.opacity = this.value/100">
-        
-        <button id="btn-capture" class="btn" style="width:100%; background:var(--red); color:white; padding:15px" onclick="runAiScan()">
-            <i class="fas fa-bullseye"></i> CAPTURAR Y ESCANEAR IA
-        </button>
-        <button id="btn-reset" class="btn" style="width:100%; margin-top:10px; display:none" onclick="resetScan()">
-            <i class="fas fa-redo"></i> REINTENTAR ESCANEO
-        </button>
+        <input type="range" min="0" max="100" value="50" style="width:100%; accent-color: var(--neon);" oninput="document.getElementById('ghost-overlay').style.opacity = this.value/100">
     </div>
 
     <div id="tab-dex" class="panel">
@@ -115,14 +103,16 @@
 
     <div id="tab-decks" class="panel">
         <div class="deck-title">
-            <b>Charizard ex Meta</b>
-            <button class="btn" style="padding:5px 10px" onclick="toggleDeck('grid-zard')">Ver</button>
+            <b>Charizard ex Meta Deck</b>
+            <button class="btn" style="padding:5px" onclick="toggleDeck('grid-zard')">Ver</button>
         </div>
         <div id="grid-zard" class="deck-grid" style="display:none;">
             <img class="deck-card-img" src="https://images.pokemontcg.io/sv3/125_hires.png">
+            <img class="deck-card-img" src="https://images.pokemontcg.io/sv3/125_hires.png">
+            <img class="deck-card-img" src="https://images.pokemontcg.io/sv3/125_hires.png">
+            <img class="deck-card-img" src="https://images.pokemontcg.io/sv3/164_hires.png">
             <img class="deck-card-img" src="https://images.pokemontcg.io/sv3/164_hires.png">
             <img class="deck-card-img" src="https://images.pokemontcg.io/swsh12/153_hires.png">
-            <img class="deck-card-img" src="https://images.pokemontcg.io/swsh8/229_hires.png">
         </div>
     </div>
 </div>
@@ -132,6 +122,7 @@
     let vfGhostImg = "";
     const BACK_IMAGE = "https://images.pokemontcg.io/swsh1/back.png";
 
+    // --- CÁMARA ---
     async function initCamera() {
         if (activeStream) activeStream.getTracks().forEach(t => t.stop());
         const id = document.getElementById('camSelect').value;
@@ -143,71 +134,30 @@
         } catch (e) { console.warn("Error cámara"); }
     }
 
+    // --- CARGA DIRECTA (SIN ERRORES DE RED) ---
     function directLoad(type) {
         const inputId = type === 'val' ? 'valInput' : 'vfInput';
         const q = document.getElementById(inputId).value.trim();
-        if(!q.includes('/')) return alert("Formato: set/numero");
+        if(!q.includes('/')) return alert("Usa: set/numero (ej: base1/4)");
+
         const imgUrl = `https://images.pokemontcg.io/${q}_hires.png`;
         
         if(type === 'vf') {
             vfGhostImg = imgUrl;
-            document.getElementById('ghost-overlay').src = imgUrl;
-            document.getElementById('ghost-overlay').style.display = 'block';
-            resetScan();
+            const g = document.getElementById('ghost-overlay');
+            g.src = imgUrl;
+            g.style.display = 'block';
         } else {
             document.getElementById('results-val').innerHTML = `
                 <div class="res-card">
-                    <img src="${imgUrl}" width="60">
-                    <div style="flex:1; font-size:0.8rem"><b>ID: ${q}</b><br><span style="color:#00ff88">ONLINE</span></div>
+                    <img src="${imgUrl}" width="80">
+                    <div style="flex:1">
+                        <b style="color:var(--neon)">ID: ${q}</b><br>
+                        <span style="color:#00ff88">CARGA DIRECTA OK</span>
+                    </div>
                     <button class="btn" onclick="saveToDex('${q}', '${imgUrl}')">+</button>
                 </div>`;
         }
-    }
-
-    function runAiScan() {
-        if(!vfGhostImg) return alert("Carga una carta primero");
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('scan-canvas');
-        const status = document.getElementById('scan-status');
-        const ghost = document.getElementById('ghost-overlay');
-
-        // Congelar
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
-        video.style.display = 'none';
-        canvas.style.display = 'block';
-        
-        // UI
-        document.getElementById('btn-capture').style.display = 'none';
-        document.getElementById('btn-reset').style.display = 'flex';
-        status.style.display = 'block';
-        status.style.background = '#444';
-        status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> COMPARANDO...';
-
-        setTimeout(() => {
-            const isMatch = Math.random() > 0.25; // Simulación 85% match
-            if(isMatch) {
-                status.style.background = "#00ff88";
-                status.style.color = "#000";
-                status.innerHTML = "MATCH 92% - BORDES OK";
-                ghost.style.border = "4px solid #00ff88";
-            } else {
-                status.style.background = "#ff1f1f";
-                status.style.color = "#fff";
-                status.innerHTML = "ERROR - OFFSET DETECTADO";
-                ghost.style.border = "4px solid #ff1f1f";
-            }
-        }, 1200);
-    }
-
-    function resetScan() {
-        document.getElementById('video').style.display = 'block';
-        document.getElementById('scan-canvas').style.display = 'none';
-        document.getElementById('scan-status').style.display = 'none';
-        document.getElementById('btn-capture').style.display = 'flex';
-        document.getElementById('btn-reset').style.display = 'none';
-        document.getElementById('ghost-overlay').style.border = "2px solid var(--neon)";
     }
 
     function toggleGhost(mode) {
@@ -216,11 +166,13 @@
         g.style.display = 'block';
     }
 
+    // --- NAVEGACIÓN ---
     function showTab(tabId, btn) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active-panel'));
         document.querySelectorAll('.top-nav button').forEach(b => b.classList.remove('active'));
         document.getElementById('tab-' + tabId).classList.add('active-panel');
         btn.classList.add('active');
+
         if (['val', 'vf'].includes(tabId)) {
             document.getElementById('vision-container').style.display = 'block';
             document.getElementById('cam-controls').style.display = 'flex';
@@ -232,15 +184,16 @@
         if(tabId === 'dex') renderDex();
     }
 
+    // --- MI DEX ---
     function saveToDex(id, img) {
-        let dex = JSON.parse(localStorage.getItem('pokedex_v16') || '[]');
+        let dex = JSON.parse(localStorage.getItem('my_pokedex') || '[]');
         dex.push({ id, img });
-        localStorage.setItem('pokedex_v16', JSON.stringify(dex));
-        alert("Guardada!");
+        localStorage.setItem('my_pokedex', JSON.stringify(dex));
+        alert("¡Guardada!");
     }
 
     function renderDex() {
-        const dex = JSON.parse(localStorage.getItem('pokedex_v16') || '[]');
+        const dex = JSON.parse(localStorage.getItem('my_pokedex') || '[]');
         document.getElementById('dex-list').innerHTML = dex.map(c => `<img class="deck-card-img" src="${c.img}">`).join('');
     }
 
@@ -249,6 +202,7 @@
         el.style.display = el.style.display === 'none' ? 'grid' : 'none';
     }
 
+    // Iniciar Cámaras
     navigator.mediaDevices.enumerateDevices().then(devices => {
         const videoIn = devices.filter(d => d.kind === 'videoinput');
         document.getElementById('camSelect').innerHTML = videoIn.map((d,i) => `<option value="${d.deviceId}">${d.label || 'Cam '+(i+1)}</option>`).join('');
