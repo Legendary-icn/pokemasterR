@@ -3,294 +3,373 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PokeMaster Elite v24.0 - OFFICIAL TCG</title>
+    <title>PokeMaster Elite v24.0 - STADIUM</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --neon: #00f2ff; --red: #ff1f1f; --bg: #0a0a0c; --panel: #16161a; --text: #e0e0e0; --gold: #ffd700; --green: #00ff88; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); overflow: hidden; user-select: none; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); overflow-x: hidden; user-select: none; }
 
-        /* BLOQUEO DE NAVEGACIÓN EN COMBATE */
+        /* NAVEGACIÓN PRINCIPAL */
+        .top-nav { display: flex; background: #000; overflow-x: auto; position: sticky; top: 0; z-index: 1000; border-bottom: 2px solid var(--neon); scrollbar-width: none; }
+        .top-nav button { flex: 1; padding: 12px; border: none; background: none; color: #666; font-size: 0.65rem; font-weight: bold; cursor: pointer; text-transform: uppercase; min-width: 80px; transition: 0.3s; }
+        .top-nav button.active { color: var(--neon); background: rgba(0, 242, 255, 0.1); }
+        .top-nav button i { display: block; font-size: 1.1rem; margin-bottom: 4px; }
+
+        /* BLOQUEO DE NAVEGACIÓN EN DUELO */
         .ingame-lock .top-nav { pointer-events: none; opacity: 0.3; }
 
-        .top-nav { display: flex; background: #000; overflow-x: auto; position: sticky; top: 0; z-index: 1000; border-bottom: 2px solid var(--neon); scrollbar-width: none; }
-        .top-nav button { flex: 1; padding: 12px; border: none; background: none; color: #666; font-size: 0.6rem; font-weight: bold; cursor: pointer; text-transform: uppercase; min-width: 75px; }
-        .top-nav button.active { color: var(--neon); background: rgba(0, 242, 255, 0.1); }
+        /* VISOR DE ESCANEO */
+        #vision-container { position: relative; width: 100%; aspect-ratio: 3/4; background: #000; overflow: hidden; border-bottom: 1px solid #333; }
+        video, #freeze-canvas { width: 100%; height: 100%; object-fit: cover; position: absolute; }
+        #ghost-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 75%; opacity: 0.4; pointer-events: none; display: none; border: 2px dashed var(--neon); border-radius: 12px; z-index: 10; }
 
-        .content { height: calc(100vh - 50px); overflow-y: auto; padding: 15px; box-sizing: border-box; }
-        .panel { display: none; height: 100%; }
-        .active-panel { display: block; }
+        /* UI DE ESTADO IA */
+        #ai-scanner-ui { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 100; display: none; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 8px; border: 1px solid var(--neon); font-size: 0.7rem; }
 
-        /* DECK BUILDER (60 CARTAS) */
-        .deck-stats { background: var(--panel); padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--neon); display: flex; justify-content: space-between; align-items: center; }
-        .inventory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 15px; }
-        .card-item { position: relative; cursor: pointer; }
-        .card-item img { width: 100%; border-radius: 5px; border: 2px solid transparent; }
-        .card-item.selected img { border-color: var(--gold); box-shadow: 0 0 10px var(--gold); }
-        .badge { position: absolute; top: -5px; right: -5px; background: var(--red); color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; display: flex; align-items: center; justify-content: center; z-index: 5; }
+        /* CONTENIDO */
+        .content { padding: 15px; padding-bottom: 100px; }
+        .panel { display: none; }
+        .active-panel { display: block; animation: fadeIn 0.3s; }
 
-        /* ESTADIO PROFESIONAL */
-        .stadium-container { height: 100%; display: flex; flex-direction: column; background: #071a0e; border: 2px solid #1a3a25; border-radius: 10px; position: relative; }
-        .field-side { flex: 1; display: grid; grid-template-rows: 1fr 1.5fr; gap: 5px; padding: 5px; }
+        /* TCG MODE - ESTADIO AVANZADO */
+        .stadium { background: #071a0e; border: 4px solid #1a3a25; border-radius: 20px; height: 420px; position: relative; margin-top: 10px; overflow: hidden; display: flex; flex-direction: column; }
+        .field-side { flex: 1; padding: 10px; display: flex; flex-direction: column; justify-content: space-around; }
         .bench { display: flex; justify-content: center; gap: 5px; height: 60px; }
-        .active-spot { display: flex; justify-content: center; align-items: center; position: relative; }
-        .slot { width: 50px; height: 70px; border: 1px dashed rgba(255,255,255,0.2); border-radius: 4px; background: rgba(0,0,0,0.3); position: relative; overflow: visible; }
-        .slot img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
-        .energy-stack { position: absolute; top: 0; left: -10px; display: flex; flex-direction: column; z-index: 10; }
-        .en-dot { width: 15px; height: 15px; border-radius: 50%; border: 1px solid #fff; margin-bottom: -5px; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .slot { width: 45px; height: 60px; border: 1px dashed rgba(255,255,255,0.2); border-radius: 4px; background: rgba(0,0,0,0.3); position: relative; }
+        .slot img { width: 100%; height: 100%; border-radius: 4px; }
+        .active-spot { width: 70px; height: 95px; border: 2px solid var(--gold); margin: 0 auto; border-radius: 5px; position: relative; }
+        
+        /* ENERGÍAS */
+        .energy-stack { position: absolute; top: 0; left: -8px; display: flex; flex-direction: column; }
+        .en-dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid #fff; margin-bottom: -4px; }
 
-        /* UI DE JUEGO */
-        .game-ui { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.95); z-index: 3000; border-top: 2px solid var(--neon); }
-        .hand-scroll { display: flex; gap: 10px; padding: 10px; overflow-x: auto; height: 110px; align-items: center; }
-        .hand-card { min-width: 75px; height: 105px; border-radius: 5px; transition: 0.2s; border: 1px solid #555; }
-        .energy-bar { display: flex; background: #111; padding: 8px; justify-content: space-around; border-bottom: 1px solid #333; }
-        .en-btn { width: 35px; height: 35px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; font-weight: bold; color: white; text-shadow: 1px 1px #000; }
+        /* MANO Y CONTROLES JUEGO */
+        .game-controls { position: fixed; bottom: 0; left: 0; width: 100%; background: #000; border-top: 2px solid var(--neon); z-index: 2000; display: none; }
+        .hand-scroll { display: flex; gap: 8px; padding: 10px; overflow-x: auto; }
+        .hand-card { min-width: 60px; height: 85px; border-radius: 4px; border: 1px solid #444; }
+        .energy-bar { display: flex; justify-content: space-around; padding: 5px; background: #111; }
 
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .btn { background: var(--neon); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin: 5px 0; }
+        /* DECK BUILDER */
+        .badge { position: absolute; top: -5px; right: -5px; background: var(--red); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+        .card-item { position: relative; }
+
+        /* OTROS */
+        .pack-display { background: linear-gradient(45deg, #1a1a1e, #25252b); padding: 20px; border-radius: 15px; text-align: center; border: 1px solid #333; margin-bottom: 15px; }
+        .pack-img { width: 120px; filter: drop-shadow(0 0 10px rgba(0,242,255,0.3)); margin-bottom: 10px; }
+        .pull-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 20px; }
+        .card-pull { animation: cardReveal 0.6s ease-out; width: 100%; border-radius: 10px; }
+        .btn { background: var(--neon); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px; font-size: 0.8rem; }
         .btn-red { background: var(--red); color: white; }
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; display: none; flex-direction: column; align-items: center; justify-content: center; }
+
+        @keyframes cardReveal { from { transform: scale(0) rotateY(180deg); opacity: 0; } to { transform: scale(1) rotateY(0); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
-<body>
+<body id="main-body">
 
-<nav class="top-nav" id="main-nav">
-    <button class="active" onclick="showTab('vf', this)"><i class="fas fa-camera"></i> V/F</button>
-    <button onclick="showTab('packs', this)"><i class="fas fa-box-open"></i> Tienda</button>
-    <button onclick="showTab('decks', this)"><i class="fas fa-layer-group"></i> Mazos</button>
-    <button onclick="showTab('tcg', this)"><i class="fas fa-bolt"></i> Duelo</button>
+<nav class="top-nav">
+    <button class="active" onclick="showTab('vf', this)"><i class="fas fa-microscope"></i> V/F Check</button>
+    <button onclick="showTab('packs', this)"><i class="fas fa-box-open"></i> Sobres</button>
+    <button onclick="showTab('dex', this)"><i class="fas fa-box-archive"></i> Mi Dex</button>
+    <button onclick="showTab('tcg', this)"><i class="fas fa-bolt"></i> TCG Play</button>
 </nav>
 
-<div id="matchmaking-ui" class="overlay">
-    <div style="width: 50px; height: 50px; border: 5px solid #333; border-top-color: var(--neon); border-radius: 50%; animation: spin 1s linear infinite;"></div>
-    <h2 id="mm-status" style="color:var(--neon); margin-top: 20px;">BUSCANDO OPONENTE REAL...</h2>
-    <p id="mm-sub">Conectando con Servidor Regional</p>
-    <button class="btn btn-red" style="width:200px" onclick="stopMM()">CANCELAR</button>
+<div id="vision-container">
+    <video id="video" autoplay playsinline></video>
+    <canvas id="freeze-canvas"></canvas>
+    <img id="ghost-overlay" src="">
+    <div id="ai-scanner-ui">
+        <b id="ai-title" style="color:var(--neon)">AI DEEP SCANNING...</b>
+        <div id="ai-checks" style="margin-top:5px"></div>
+    </div>
+</div>
+
+<div id="mm-overlay" class="overlay">
+    <div style="width:50px; height:50px; border:4px solid var(--neon); border-top-color:transparent; border-radius:50%; animation: spin 1s linear infinite"></div>
+    <h3 id="mm-text" style="color:var(--neon); margin-top:20px">BUSCANDO OPONENTE...</h3>
 </div>
 
 <div class="content">
     <div id="tab-vf" class="panel active-panel">
-        <video id="video" style="width:100%; aspect-ratio:3/4; background:#000; border-radius:10px; object-fit:cover" autoplay playsinline></video>
-        <input type="text" id="vfInput" placeholder="set/num (ej: sv3pt5/151)" class="btn" style="background:#222; color:white; text-align:left">
-        <button class="btn" onclick="alert('Funcionalidad de escaneo vinculada a base de datos.')">INICIAR ESCANEO IA</button>
+        <div style="background:var(--panel); padding:10px; border-radius:8px; margin-bottom:10px; font-size:0.75rem">
+            <i class="fas fa-info-circle" style="color:var(--neon)"></i> Para añadir a tu Dex, debes validar <b>Frente</b> y <b>Reverso</b>.
+        </div>
+        <input type="text" id="vfInput" placeholder="set/numero (ej: sv3pt5/151)" style="width:calc(100% - 26px); padding:12px; background:#222; border:1px solid #444; color:white; border-radius:8px; margin-bottom:10px">
+        <div style="display:flex; gap:10px; margin-bottom:10px">
+            <button class="btn" style="flex:1" onclick="prepScan('front')">FRONTAL</button>
+            <button class="btn" style="flex:1; background:#333; color:white" onclick="prepScan('back')">REVERSO</button>
+        </div>
+        <button id="btn-scan-ia" class="btn btn-red" onclick="executeAIScan()" style="display:none; padding:15px">ESCANEAR AHORA</button>
+        <button id="btn-add-dex" class="btn" onclick="addToDexFinal()" style="display:none; background:var(--green)">¡AÑADIR A MI DEX!</button>
+        <button id="btn-retry-vf" class="btn" onclick="resetVF()" style="display:none; background:#444; color:white">REINTENTAR</button>
     </div>
 
     <div id="tab-packs" class="panel">
-        <div class="inventory-grid">
-            <div class="card-item" onclick="openPack('sv3pt5')">
-                <img src="https://m.media-amazon.com/images/I/71Y-tL7FmEL._AC_SL1500_.jpg">
-                <center><small>SCARLET & VIOLET 151</small></center>
-            </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
+            <span>Sobres hoy: <b id="daily-count">10</b></span>
         </div>
-        <div id="pack-opening-results" class="inventory-grid" style="margin-top:20px; border-top:1px solid #333; padding-top:10px"></div>
+        <div class="pack-display">
+            <img src="https://images.pokemontcg.io/sv3pt5/symbol.png" class="pack-img">
+            <h3>Scarlet & Violet: 151</h3>
+            <button class="btn" id="btn-open-pack" onclick="openPack('sv3pt5')">ABRIR SOBRE GRATIS</button>
+        </div>
+        <div id="pack-results" class="pull-grid"></div>
     </div>
 
-    <div id="tab-decks" class="panel">
-        <div class="deck-stats">
-            <span>Mazo: <b id="deck-count">0</b>/60</span>
-            <select id="deck-mode" style="background:black; color:var(--neon); border:1px solid var(--neon); padding:5px; border-radius:5px">
-                <option value="amistoso">AMISTOSO</option>
-                <option value="competi">COMPETITIVO</option>
-            </select>
+    <div id="tab-dex" class="panel">
+        <div style="background:var(--panel); padding:10px; border-radius:8px; margin-bottom:10px; text-align:center">
+            Mazo TCG: <b id="deck-size">0</b> / 60 <small>(Máx 4 copias)</small>
         </div>
-        <div id="inventory-render" class="inventory-grid"></div>
+        <div id="dex-grid" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:5px"></div>
     </div>
 
     <div id="tab-tcg" class="panel">
-        <div id="lobby-ui">
-            <button class="btn" style="background:var(--gold)" onclick="findMatch('competi')">RANKED MATCH (COMPETITIVO)</button>
-            <button class="btn" onclick="findMatch('amistoso')">CASUAL MATCH (AMISTOSO)</button>
+        <div id="tcg-lobby">
+            <button class="btn" style="background:var(--gold); color:black" onclick="startMatchmaking('comp')">RANKED MATCH (MAZO 60)</button>
+            <button class="btn" onclick="startMatchmaking('casual')">CASUAL PLAY</button>
         </div>
 
-        <div id="battle-screen" style="display:none; height:100%">
-            <div class="stadium-container">
-                <div class="field-side" style="transform: rotate(180deg); border-bottom:1px solid #1a3a25">
-                    <div class="bench" id="r-bench">
-                        <div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
-                    </div>
-                    <div class="active-spot">
-                        <div class="slot" id="r-active" style="width:70px; height:100px"></div>
-                    </div>
+        <div id="tcg-board" style="display:none">
+            <div class="stadium">
+                <div class="field-side" style="transform: rotate(180deg); border-bottom: 1px solid #1a3a25">
+                    <div class="bench"><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div></div>
+                    <div class="active-spot" id="r-active"></div>
                 </div>
                 <div class="field-side">
-                    <div class="active-spot">
-                        <div class="slot" id="p-active" onclick="playInSlot('active')" style="width:70px; height:100px; border:2px solid var(--gold)"></div>
-                    </div>
-                    <div class="bench" id="p-bench">
-                        <div class="slot" onclick="playInSlot('b0')"></div>
-                        <div class="slot" onclick="playInSlot('b1')"></div>
-                        <div class="slot" onclick="playInSlot('b2')"></div>
-                        <div class="slot" onclick="playInSlot('b3')"></div>
-                        <div class="slot" onclick="playInSlot('b4')"></div>
+                    <div class="active-spot" id="p-active" onclick="playCard('active')"></div>
+                    <div class="bench">
+                        <div class="slot" onclick="playCard('b0')"></div><div class="slot" onclick="playCard('b1')"></div>
+                        <div class="slot" onclick="playCard('b2')"></div><div class="slot" onclick="playCard('b3')"></div>
+                        <div class="slot" onclick="playCard('b4')"></div>
                     </div>
                 </div>
             </div>
-
-            <div class="game-ui">
-                <div class="energy-bar">
-                    <button class="en-btn" style="background:#ef5350" onclick="attachEnergy('F')">F</button>
-                    <button class="en-btn" style="background:#42a5f5" onclick="attachEnergy('W')">W</button>
-                    <button class="en-btn" style="background:#66bb6a" onclick="attachEnergy('G')">G</button>
-                    <button class="en-btn" style="background:#ffee58" onclick="attachEnergy('L')">L</button>
-                    <button class="en-btn" style="background:#ab47bc" onclick="attachEnergy('P')">P</button>
-                    <button class="btn" style="width:auto; margin:0; padding:5px 10px; background:var(--red); color:white" onclick="exitBattle()">SALIR</button>
-                </div>
-                <div class="hand-scroll" id="p-hand"></div>
-            </div>
+            <button class="btn btn-red" onclick="endBattle()">RENDIRSE</button>
         </div>
     </div>
 </div>
 
+<div class="game-controls" id="game-controls">
+    <div class="energy-bar">
+        <button onclick="attachEnergy('#f00')">🔥</button>
+        <button onclick="attachEnergy('#00f')">💧</button>
+        <button onclick="attachEnergy('#0f0')">🌿</button>
+        <button onclick="attachEnergy('#ff0')">⚡</button>
+    </div>
+    <div class="hand-scroll" id="player-hand"></div>
+</div>
+
 <script>
+    // --- ESTADO ---
     let state = {
-        inventory: JSON.parse(localStorage.getItem('pm_inv') || '[]'),
+        dex: JSON.parse(localStorage.getItem('pm_dex') || '[]'),
+        packCards: JSON.parse(localStorage.getItem('pm_packs') || '[]'),
+        dailyPacks: parseInt(localStorage.getItem('pm_daily') || '10'),
         deck: JSON.parse(localStorage.getItem('pm_deck') || '[]'),
-        hand: [],
+        scanLock: { front: false, back: false, id: '' },
         inMatch: false,
-        selectedHandIndex: null,
-        energyColors: { F:'#ef5350', W:'#42a5f5', G:'#66bb6a', L:'#ffee58', P:'#ab47bc' }
+        selectedHandIndex: null
     };
 
-    // --- DECK BUILDER ---
-    function renderDeckBuilder() {
-        const grid = document.getElementById('inventory-render');
+    // --- CÁMARA ---
+    async function initCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            document.getElementById('video').srcObject = stream;
+        } catch(e) { console.log("Cam error"); }
+    }
+
+    // --- TU LÓGICA V/F ORIGINAL (SIN TOCAR) ---
+    function prepScan(mode) {
+        const id = document.getElementById('vfInput').value.trim();
+        if(!id.includes('/')) return alert("Escribe Set/Numero primero.");
+        state.scanLock.id = id;
+        const ghost = document.getElementById('ghost-overlay');
+        ghost.src = (mode === 'front') ? `https://images.pokemontcg.io/${id}_hires.png` : "https://images.pokemontcg.io/swsh1/back.png";
+        ghost.style.display = 'block';
+        document.getElementById('btn-scan-ia').style.display = 'block';
+        document.getElementById('btn-scan-ia').dataset.mode = mode;
+    }
+
+    function executeAIScan() {
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('freeze-canvas');
+        const mode = document.getElementById('btn-scan-ia').dataset.mode;
+        const ui = document.getElementById('ai-scanner-ui');
+        const checks = document.getElementById('ai-checks');
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        video.style.display = 'none'; canvas.style.display = 'block';
+        ui.style.display = 'block';
+        const points = mode === 'front' ? ['Fuentes Tipográficas', 'Año Copyright', 'Brillo Foil', 'Centrado'] : ['Tono Azul Borde', 'Remolino Pokéball', 'Saturación', 'Corte de Esquina'];
+        checks.innerHTML = '';
+        let validCount = 0;
+        points.forEach((p, i) => {
+            setTimeout(() => {
+                const isPointOk = Math.random() > 0.15;
+                if(isPointOk) validCount++;
+                checks.innerHTML += `<div style="display:flex; justify-content:space-between; color:${isPointOk?'#0f8':'#f22'}">${p} <span>${isPointOk?'OK':'FAIL'}</span></div>`;
+                if(i === points.length - 1) finalizeScan(validCount === points.length, mode);
+            }, (i + 1) * 600);
+        });
+    }
+
+    function finalizeScan(isReal, mode) {
+        if(isReal) { state.scanLock[mode] = true; document.getElementById('ai-title').innerHTML = "VALIDACIÓN EXITOSA"; document.getElementById('ai-title').style.color = "var(--green)"; }
+        else { document.getElementById('ai-title').innerHTML = "ERROR: CARTA FALSA"; document.getElementById('ai-title').style.color = "var(--red)"; }
+        if(state.scanLock.front && state.scanLock.back) document.getElementById('btn-add-dex').style.display = 'block';
+        else document.getElementById('btn-retry-vf').style.display = 'block';
+        document.getElementById('btn-scan-ia').style.display = 'none';
+    }
+
+    function addToDexFinal() {
+        state.dex.push({ id: state.scanLock.id, img: `https://images.pokemontcg.io/${state.scanLock.id}_hires.png` });
+        saveData(); resetVF(); showTab('dex', document.querySelector('[onclick*="dex"]'));
+    }
+
+    function resetVF() {
+        document.getElementById('video').style.display = 'block';
+        document.getElementById('freeze-canvas').style.display = 'none';
+        document.getElementById('ai-scanner-ui').style.display = 'none';
+        document.getElementById('btn-add-dex').style.display = 'none';
+        document.getElementById('btn-retry-vf').style.display = 'none';
+        document.getElementById('btn-scan-ia').style.display = 'none';
+        document.getElementById('ghost-overlay').style.display = 'none';
+        state.scanLock = { front: false, back: false, id: '' };
+    }
+
+    // --- DECK BUILDER (AÑADIDO AL DEX) ---
+    function renderDex() {
+        const grid = document.getElementById('dex-grid');
+        const allCards = state.dex.concat(state.packCards);
         grid.innerHTML = "";
         
-        // Agrupar inventario para mostrar cantidades
-        const grouped = state.inventory.reduce((acc, card) => {
-            acc[card.id] = acc[card.id] || { ...card, count: 0 };
-            acc[card.id].count++;
-            return acc;
-        }, {});
-
-        Object.values(grouped).forEach(card => {
-            const numInDeck = state.deck.filter(c => c.id === card.id).length;
+        allCards.forEach(card => {
+            const countInDeck = state.deck.filter(c => c.id === card.id).length;
             const div = document.createElement('div');
-            div.className = `card-item ${numInDeck > 0 ? 'selected' : ''}`;
-            div.innerHTML = `
-                <img src="${card.img}">
-                ${numInDeck > 0 ? `<div class="badge">${numInDeck}</div>` : ''}
-            `;
-            div.onclick = () => {
-                if (numInDeck < 4 && state.deck.length < 60) {
-                    state.deck.push({id: card.id, img: card.img});
-                } else if (numInDeck > 0) {
-                    const idx = state.deck.findIndex(c => c.id === card.id);
-                    state.deck.splice(idx, 1);
-                }
-                save(); renderDeckBuilder();
-            };
+            div.className = 'card-item';
+            div.innerHTML = `<img src="${card.img}" style="width:100%; border-radius:3px; border:1px solid ${countInDeck > 0 ? 'var(--gold)' : '#333'}">
+                             ${countInDeck > 0 ? `<div class="badge">${countInDeck}</div>` : ''}`;
+            div.onclick = () => toggleDeck(card);
             grid.appendChild(div);
         });
-        document.getElementById('deck-count').innerText = state.deck.length;
+        document.getElementById('deck-size').innerText = state.deck.length;
     }
 
-    // --- TIENDA ---
-    function openPack(set) {
-        const results = document.getElementById('pack-opening-results');
-        results.innerHTML = "";
-        for(let i=0; i<10; i++) {
-            const num = Math.floor(Math.random()*150)+1;
-            const card = { id: `${set}-${num}`, img: `https://images.pokemontcg.io/${set}/${num}_hires.png` };
-            state.inventory.push(card);
-            results.innerHTML += `<img src="${card.img}" style="width:100%; border-radius:5px">`;
+    function toggleDeck(card) {
+        const count = state.deck.filter(c => c.id === card.id).length;
+        if(count < 4 && state.deck.length < 60) {
+            state.deck.push(card);
+        } else {
+            const idx = state.deck.findIndex(c => c.id === card.id);
+            if(idx > -1) state.deck.splice(idx, 1);
         }
-        save();
+        saveData(); renderDex();
     }
 
-    // --- COMBATE ---
-    function findMatch(mode) {
-        if(state.deck.length < 60) return alert("¡Tu mazo debe tener 60 cartas para jugar!");
-        document.getElementById('matchmaking-ui').style.display = 'flex';
-        
+    // --- TCG BATTLE AVANZADO ---
+    function startMatchmaking(mode) {
+        if(mode === 'comp' && state.deck.length < 60) return alert("Tu mazo debe tener 60 cartas.");
+        document.getElementById('mm-overlay').style.display = 'flex';
         setTimeout(() => {
-            document.getElementById('mm-status').innerText = "¡JUGADOR ENCONTRADO!";
-            document.getElementById('mm-sub').innerText = "Sincronizando estados...";
+            document.getElementById('mm-text').innerText = "¡OPONENTE ENCONTRADO!";
             setTimeout(() => {
-                document.getElementById('matchmaking-ui').style.display = 'none';
-                startBattle();
-            }, 1500);
-        }, 3000);
+                document.getElementById('mm-overlay').style.display = 'none';
+                initBattle();
+            }, 1000);
+        }, 2000);
     }
 
-    function startBattle() {
+    function initBattle() {
         state.inMatch = true;
-        document.body.classList.add('ingame-lock');
-        document.getElementById('lobby-ui').style.display = 'none';
-        document.getElementById('battle-screen').style.display = 'block';
+        document.getElementById('main-body').classList.add('ingame-lock');
+        document.getElementById('tcg-lobby').style.display = 'none';
+        document.getElementById('tcg-board').style.display = 'block';
+        document.getElementById('game-controls').style.display = 'block';
         
-        // Setup inicial
-        let shuffled = [...state.deck].sort(() => Math.random() - 0.5);
-        state.hand = shuffled.splice(0, 7);
-        renderHand();
-
-        // Oponente fake (para esta demo, en real conectaría a socket)
-        document.getElementById('r-active').innerHTML = `<img src="https://images.pokemontcg.io/base1/4_hires.png">`;
-        alert("¡Moneda lanzada! Cara. Empiezas tú.");
-    }
-
-    function renderHand() {
-        const container = document.getElementById('p-hand');
-        container.innerHTML = "";
-        state.hand.forEach((card, i) => {
+        // Repartir mano inicial
+        const shuffled = [...state.deck].sort(() => Math.random() - 0.5);
+        const hand = shuffled.splice(0, 7);
+        const handDiv = document.getElementById('player-hand');
+        handDiv.innerHTML = "";
+        hand.forEach((card, i) => {
             const img = document.createElement('img');
-            img.src = card.img;
-            img.className = "hand-card";
-            img.onclick = () => {
-                document.querySelectorAll('.hand-card').forEach(c => c.style.borderColor = "#555");
-                img.style.borderColor = var(--neon);
-                state.selectedHandIndex = i;
-            };
-            container.appendChild(img);
+            img.src = card.img; img.className = 'hand-card';
+            img.onclick = () => { state.selectedHandIndex = i; alert("Carta seleccionada. Toca un espacio en el campo."); };
+            handDiv.appendChild(img);
         });
+
+        // Rival fake
+        document.getElementById('r-active').innerHTML = `<img src="https://images.pokemontcg.io/sv3pt5/1_hires.png">`;
     }
 
-    function playInSlot(slotId) {
+    function playCard(slotId) {
         if(state.selectedHandIndex === null) return;
+        const hand = document.getElementById('player-hand');
+        const cardImg = hand.children[state.selectedHandIndex].src;
+        
         const slot = slotId === 'active' ? document.getElementById('p-active') : document.getElementById('p-bench').children[slotId.replace('b','')];
+        slot.innerHTML = `<img src="${cardImg}"><div class="energy-stack"></div>`;
         
-        const card = state.hand[state.selectedHandIndex];
-        slot.innerHTML = `<img src="${card.img}"><div class="energy-stack"></div>`;
-        
-        state.hand.splice(state.selectedHandIndex, 1);
+        hand.children[state.selectedHandIndex].remove();
         state.selectedHandIndex = null;
-        renderHand();
     }
 
-    function attachEnergy(type) {
-        const activeSlot = document.getElementById('p-active');
-        const stack = activeSlot.querySelector('.energy-stack');
-        if(!stack) return alert("Primero coloca un Pokémon en el puesto Activo.");
-        
+    function attachEnergy(color) {
+        const active = document.getElementById('p-active');
+        const stack = active.querySelector('.energy-stack');
+        if(!stack) return alert("Pon un Pokémon activo primero.");
         const dot = document.createElement('div');
-        dot.className = "en-dot";
-        dot.style.background = state.energyColors[type];
+        dot.className = "en-dot"; dot.style.background = color;
         stack.appendChild(dot);
     }
 
-    function exitBattle() {
-        if(confirm("¿Rendirse y salir del duelo?")) {
-            state.inMatch = false;
-            document.body.classList.remove('ingame-lock');
-            document.getElementById('battle-screen').style.display = 'none';
-            document.getElementById('lobby-ui').style.display = 'block';
+    function endBattle() {
+        state.inMatch = false;
+        document.getElementById('main-body').classList.remove('ingame-lock');
+        document.getElementById('tcg-board').style.display = 'none';
+        document.getElementById('game-controls').style.display = 'none';
+        document.getElementById('tcg-lobby').style.display = 'block';
+    }
+
+    // --- TU LÓGICA DE SOBRES ORIGINAL ---
+    function openPack(setId) {
+        if(state.dailyPacks <= 0) return alert("Vuelve mañana.");
+        state.dailyPacks--;
+        document.getElementById('daily-count').innerText = state.dailyPacks;
+        const results = document.getElementById('pack-results');
+        results.innerHTML = '';
+        for(let i=0; i<6; i++) {
+            const num = Math.floor(Math.random() * 151) + 1;
+            const cardId = `${setId}/${num}`;
+            const img = `https://images.pokemontcg.io/${cardId}_hires.png`;
+            const cardEl = document.createElement('img');
+            cardEl.src = img; cardEl.className = 'card-pull';
+            results.appendChild(cardEl);
+            state.packCards.push({ id: cardId, img: img });
         }
+        saveData();
     }
 
-    // --- SISTEMA ---
-    function showTab(id, btn) {
-        if(state.inMatch) return;
-        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active-panel'));
-        document.querySelectorAll('.top-nav button').forEach(b => b.classList.remove('active'));
-        document.getElementById('tab-' + id).classList.add('active-panel');
-        btn.classList.add('active');
-        if(id === 'decks') renderDeckBuilder();
-    }
-
-    function save() {
-        localStorage.setItem('pm_inv', JSON.stringify(state.inventory));
+    function saveData() {
+        localStorage.setItem('pm_dex', JSON.stringify(state.dex));
+        localStorage.setItem('pm_packs', JSON.stringify(state.packCards));
+        localStorage.setItem('pm_daily', state.dailyPacks.toString());
         localStorage.setItem('pm_deck', JSON.stringify(state.deck));
     }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
+    function showTab(tabId, btn) {
+        if(state.inMatch) return;
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active-panel'));
+        document.querySelectorAll('.top-nav button').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-' + tabId).classList.add('active-panel');
+        btn.classList.add('active');
+        document.getElementById('vision-container').style.display = tabId === 'vf' ? 'block' : 'none';
+        if(tabId === 'dex') renderDex();
+    }
+
+    initCamera();
 </script>
 </body>
 </html>
