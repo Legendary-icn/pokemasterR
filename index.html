@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PokeMaster Elite v23.0 - OFFICIAL TCG ENGINE</title>
+    <title>PokeMaster Elite v24.0 - OFFICIAL TCG</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --neon: #00f2ff; --red: #ff1f1f; --bg: #0a0a0c; --panel: #16161a; --text: #e0e0e0; --gold: #ffd700; --green: #00ff88; }
@@ -20,98 +20,84 @@
         .panel { display: none; height: 100%; }
         .active-panel { display: block; }
 
-        /* DECK BUILDER */
+        /* DECK BUILDER (60 CARTAS) */
         .deck-stats { background: var(--panel); padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--neon); display: flex; justify-content: space-between; align-items: center; }
         .inventory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 15px; }
         .card-item { position: relative; cursor: pointer; }
         .card-item img { width: 100%; border-radius: 5px; border: 2px solid transparent; }
         .card-item.selected img { border-color: var(--gold); box-shadow: 0 0 10px var(--gold); }
-        .badge { position: absolute; top: -5px; right: -5px; background: var(--red); color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+        .badge { position: absolute; top: -5px; right: -5px; background: var(--red); color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; display: flex; align-items: center; justify-content: center; z-index: 5; }
 
         /* ESTADIO PROFESIONAL */
         .stadium-container { height: 100%; display: flex; flex-direction: column; background: #071a0e; border: 2px solid #1a3a25; border-radius: 10px; position: relative; }
         .field-side { flex: 1; display: grid; grid-template-rows: 1fr 1.5fr; gap: 5px; padding: 5px; }
         .bench { display: flex; justify-content: center; gap: 5px; height: 60px; }
         .active-spot { display: flex; justify-content: center; align-items: center; position: relative; }
-        .slot { width: 50px; height: 70px; border: 1px dashed rgba(255,255,255,0.2); border-radius: 4px; background: rgba(0,0,0,0.3); position: relative; overflow: hidden; }
-        .slot img { width: 100%; height: 100%; object-fit: cover; }
-        .energy-stack { position: absolute; bottom: 0; left: 0; display: flex; flex-direction: column-reverse; }
-        .en-dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid #fff; margin: 1px; }
+        .slot { width: 50px; height: 70px; border: 1px dashed rgba(255,255,255,0.2); border-radius: 4px; background: rgba(0,0,0,0.3); position: relative; overflow: visible; }
+        .slot img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
+        .energy-stack { position: absolute; top: 0; left: -10px; display: flex; flex-direction: column; z-index: 10; }
+        .en-dot { width: 15px; height: 15px; border-radius: 50%; border: 1px solid #fff; margin-bottom: -5px; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
 
         /* UI DE JUEGO */
-        .game-ui { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.95); z-index: 3000; border-top: 2px solid var(--neon); transition: 0.3s; }
-        .hand-scroll { display: flex; gap: 10px; padding: 10px; overflow-x: auto; height: 110px; }
-        .hand-card { min-width: 75px; height: 105px; border-radius: 5px; transition: 0.2s; }
-        .energy-bar { display: flex; background: #222; padding: 5px; justify-content: space-around; }
-        .en-btn { width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer; font-weight: bold; }
+        .game-ui { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.95); z-index: 3000; border-top: 2px solid var(--neon); }
+        .hand-scroll { display: flex; gap: 10px; padding: 10px; overflow-x: auto; height: 110px; align-items: center; }
+        .hand-card { min-width: 75px; height: 105px; border-radius: 5px; transition: 0.2s; border: 1px solid #555; }
+        .energy-bar { display: flex; background: #111; padding: 8px; justify-content: space-around; border-bottom: 1px solid #333; }
+        .en-btn { width: 35px; height: 35px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; font-weight: bold; color: white; text-shadow: 1px 1px #000; }
 
-        /* BOTONES */
-        .btn { background: var(--neon); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 0.8rem; margin: 5px 0; }
-        .btn-gold { background: var(--gold); }
-        
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--neon); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .btn { background: var(--neon); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin: 5px 0; }
+        .btn-red { background: var(--red); color: white; }
     </style>
 </head>
 <body>
 
 <nav class="top-nav" id="main-nav">
-    <button class="active" onclick="showTab('vf', this)"><i class="fas fa-camera"></i> Scan</button>
+    <button class="active" onclick="showTab('vf', this)"><i class="fas fa-camera"></i> V/F</button>
     <button onclick="showTab('packs', this)"><i class="fas fa-box-open"></i> Tienda</button>
     <button onclick="showTab('decks', this)"><i class="fas fa-layer-group"></i> Mazos</button>
     <button onclick="showTab('tcg', this)"><i class="fas fa-bolt"></i> Duelo</button>
-    <button onclick="showTab('val', this)"><i class="fas fa-dollar-sign"></i> Valor</button>
 </nav>
 
 <div id="matchmaking-ui" class="overlay">
-    <div class="loader"></div>
-    <h2 id="mm-status" style="color:var(--neon)">BUSCANDO JUGADOR REAL...</h2>
-    <p>Servidor: Global-West-1</p>
-    <button class="btn" style="width:200px" onclick="stopMM()">CANCELAR</button>
+    <div style="width: 50px; height: 50px; border: 5px solid #333; border-top-color: var(--neon); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    <h2 id="mm-status" style="color:var(--neon); margin-top: 20px;">BUSCANDO OPONENTE REAL...</h2>
+    <p id="mm-sub">Conectando con Servidor Regional</p>
+    <button class="btn btn-red" style="width:200px" onclick="stopMM()">CANCELAR</button>
 </div>
 
 <div class="content">
     <div id="tab-vf" class="panel active-panel">
-        <div id="vision-container" style="position:relative; aspect-ratio:3/4; background:#000; border-radius:10px; overflow:hidden">
-            <video id="video" style="width:100%; height:100%; object-fit:cover" autoplay playsinline></video>
-            <select id="cam-select" onchange="initCamera(this.value)" style="position:absolute; bottom:10px; right:10px; z-index:10"></select>
-        </div>
+        <video id="video" style="width:100%; aspect-ratio:3/4; background:#000; border-radius:10px; object-fit:cover" autoplay playsinline></video>
         <input type="text" id="vfInput" placeholder="set/num (ej: sv3pt5/151)" class="btn" style="background:#222; color:white; text-align:left">
-        <button class="btn" onclick="startScan()">ESCANEAR CARTA FÍSICA</button>
+        <button class="btn" onclick="alert('Funcionalidad de escaneo vinculada a base de datos.')">INICIAR ESCANEO IA</button>
     </div>
 
     <div id="tab-packs" class="panel">
-        <div class="pack-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+        <div class="inventory-grid">
             <div class="card-item" onclick="openPack('sv3pt5')">
                 <img src="https://m.media-amazon.com/images/I/71Y-tL7FmEL._AC_SL1500_.jpg">
-                <center><small>151 SPECIAL</small></center>
-            </div>
-            <div class="card-item" onclick="openPack('base1')">
-                <img src="https://i.ebayimg.com/images/g/p7AAAOSw4P9jL-8P/s-l1600.jpg">
-                <center><small>BASE VINTAGE</small></center>
+                <center><small>SCARLET & VIOLET 151</small></center>
             </div>
         </div>
-        <div id="pack-opening-zone" class="inventory-grid"></div>
+        <div id="pack-opening-results" class="inventory-grid" style="margin-top:20px; border-top:1px solid #333; padding-top:10px"></div>
     </div>
 
     <div id="tab-decks" class="panel">
         <div class="deck-stats">
             <span>Mazo: <b id="deck-count">0</b>/60</span>
-            <select id="deck-mode" style="background:black; color:var(--neon); border:1px solid var(--neon)">
+            <select id="deck-mode" style="background:black; color:var(--neon); border:1px solid var(--neon); padding:5px; border-radius:5px">
                 <option value="amistoso">AMISTOSO</option>
                 <option value="competi">COMPETITIVO</option>
             </select>
-            <button class="btn" style="width:80px; margin:0" onclick="clearDeck()">LIMPIAR</button>
         </div>
         <div id="inventory-render" class="inventory-grid"></div>
     </div>
 
     <div id="tab-tcg" class="panel">
         <div id="lobby-ui">
-            <button class="btn btn-gold" onclick="findMatch('competi')">PARTIDA COMPETITIVA (RANKED)</button>
-            <button class="btn" onclick="findMatch('amistoso')">DUELO AMISTOSO</button>
-            <button class="btn" onclick="shareBattle()"><i class="fab fa-whatsapp"></i> DESAFIAR AMIGO</button>
+            <button class="btn" style="background:var(--gold)" onclick="findMatch('competi')">RANKED MATCH (COMPETITIVO)</button>
+            <button class="btn" onclick="findMatch('amistoso')">CASUAL MATCH (AMISTOSO)</button>
         </div>
 
         <div id="battle-screen" style="display:none; height:100%">
@@ -126,14 +112,14 @@
                 </div>
                 <div class="field-side">
                     <div class="active-spot">
-                        <div class="slot" id="p-active" onclick="targetSlot('active')" style="width:70px; height:100px; border:2px solid var(--gold)"></div>
+                        <div class="slot" id="p-active" onclick="playInSlot('active')" style="width:70px; height:100px; border:2px solid var(--gold)"></div>
                     </div>
                     <div class="bench" id="p-bench">
-                        <div class="slot" onclick="targetSlot('b1')"></div>
-                        <div class="slot" onclick="targetSlot('b2')"></div>
-                        <div class="slot" onclick="targetSlot('b3')"></div>
-                        <div class="slot" onclick="targetSlot('b4')"></div>
-                        <div class="slot" onclick="targetSlot('b5')"></div>
+                        <div class="slot" onclick="playInSlot('b0')"></div>
+                        <div class="slot" onclick="playInSlot('b1')"></div>
+                        <div class="slot" onclick="playInSlot('b2')"></div>
+                        <div class="slot" onclick="playInSlot('b3')"></div>
+                        <div class="slot" onclick="playInSlot('b4')"></div>
                     </div>
                 </div>
             </div>
@@ -145,17 +131,11 @@
                     <button class="en-btn" style="background:#66bb6a" onclick="attachEnergy('G')">G</button>
                     <button class="en-btn" style="background:#ffee58" onclick="attachEnergy('L')">L</button>
                     <button class="en-btn" style="background:#ab47bc" onclick="attachEnergy('P')">P</button>
-                    <button class="btn" style="width:auto; margin:0 5px; background:var(--red); color:white" onclick="surrender()">RENDIRSE</button>
+                    <button class="btn" style="width:auto; margin:0; padding:5px 10px; background:var(--red); color:white" onclick="exitBattle()">SALIR</button>
                 </div>
                 <div class="hand-scroll" id="p-hand"></div>
             </div>
         </div>
-    </div>
-
-    <div id="tab-val" class="panel">
-        <input type="text" id="valInput" placeholder="set/num" class="btn">
-        <button class="btn" onclick="checkPrice()">VER PRECIO TCGPLAYER</button>
-        <div id="val-res"></div>
     </div>
 </div>
 
@@ -165,58 +145,47 @@
         deck: JSON.parse(localStorage.getItem('pm_deck') || '[]'),
         hand: [],
         inMatch: false,
-        selectedHandCard: null,
+        selectedHandIndex: null,
         energyColors: { F:'#ef5350', W:'#42a5f5', G:'#66bb6a', L:'#ffee58', P:'#ab47bc' }
     };
 
-    // --- SISTEMA DE CÁMARA ---
-    async function initCamera(id = null) {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { deviceId: id ? {exact: id} : undefined, facingMode: "environment" } 
-        });
-        document.getElementById('video').srcObject = stream;
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const select = document.getElementById('cam-select');
-        if(select.childElementCount === 0) {
-            devices.filter(d => d.kind === 'videoinput').forEach(d => {
-                select.innerHTML += `<option value="${d.deviceId}">${d.label || 'Cam'}</option>`;
-            });
-        }
-    }
-
-    // --- DECK BUILDER LÓGICA ---
+    // --- DECK BUILDER ---
     function renderDeckBuilder() {
         const grid = document.getElementById('inventory-render');
         grid.innerHTML = "";
-        state.inventory.forEach((card, index) => {
-            const countInDeck = state.deck.filter(c => c.id === card.id).length;
+        
+        // Agrupar inventario para mostrar cantidades
+        const grouped = state.inventory.reduce((acc, card) => {
+            acc[card.id] = acc[card.id] || { ...card, count: 0 };
+            acc[card.id].count++;
+            return acc;
+        }, {});
+
+        Object.values(grouped).forEach(card => {
+            const numInDeck = state.deck.filter(c => c.id === card.id).length;
             const div = document.createElement('div');
-            div.className = `card-item ${countInDeck > 0 ? 'selected' : ''}`;
+            div.className = `card-item ${numInDeck > 0 ? 'selected' : ''}`;
             div.innerHTML = `
                 <img src="${card.img}">
-                ${countInDeck > 0 ? `<div class="badge">${countInDeck}</div>` : ''}
+                ${numInDeck > 0 ? `<div class="badge">${numInDeck}</div>` : ''}
             `;
-            div.onclick = () => toggleCardInDeck(card);
+            div.onclick = () => {
+                if (numInDeck < 4 && state.deck.length < 60) {
+                    state.deck.push({id: card.id, img: card.img});
+                } else if (numInDeck > 0) {
+                    const idx = state.deck.findIndex(c => c.id === card.id);
+                    state.deck.splice(idx, 1);
+                }
+                save(); renderDeckBuilder();
+            };
             grid.appendChild(div);
         });
         document.getElementById('deck-count').innerText = state.deck.length;
     }
 
-    function toggleCardInDeck(card) {
-        const count = state.deck.filter(c => c.id === card.id).length;
-        if(state.deck.length < 60 && count < 4) {
-            state.deck.push(card);
-        } else if (count > 0) {
-            const idx = state.deck.findIndex(c => c.id === card.id);
-            state.deck.splice(idx, 1);
-        }
-        save();
-        renderDeckBuilder();
-    }
-
     // --- TIENDA ---
     function openPack(set) {
-        const results = document.getElementById('pack-opening-zone');
+        const results = document.getElementById('pack-opening-results');
         results.innerHTML = "";
         for(let i=0; i<10; i++) {
             const num = Math.floor(Math.random()*150)+1;
@@ -227,17 +196,18 @@
         save();
     }
 
-    // --- COMBATE REAL ---
+    // --- COMBATE ---
     function findMatch(mode) {
-        if(state.deck.length < 60) return alert("¡Tu mazo debe tener 60 cartas!");
+        if(state.deck.length < 60) return alert("¡Tu mazo debe tener 60 cartas para jugar!");
         document.getElementById('matchmaking-ui').style.display = 'flex';
         
         setTimeout(() => {
-            document.getElementById('mm-status').innerText = "¡OPONENTE ENCONTRADO!";
+            document.getElementById('mm-status').innerText = "¡JUGADOR ENCONTRADO!";
+            document.getElementById('mm-sub').innerText = "Sincronizando estados...";
             setTimeout(() => {
                 document.getElementById('matchmaking-ui').style.display = 'none';
                 startBattle();
-            }, 1000);
+            }, 1500);
         }, 3000);
     }
 
@@ -247,13 +217,14 @@
         document.getElementById('lobby-ui').style.display = 'none';
         document.getElementById('battle-screen').style.display = 'block';
         
-        // Barajar y Robar 7
-        let deckCopy = [...state.deck].sort(() => Math.random() - 0.5);
-        state.hand = deckCopy.splice(0, 7);
+        // Setup inicial
+        let shuffled = [...state.deck].sort(() => Math.random() - 0.5);
+        state.hand = shuffled.splice(0, 7);
         renderHand();
 
-        // Simular Rival
-        document.getElementById('r-active').innerHTML = `<img src="${state.inventory[0]?.img || 'https://images.pokemontcg.io/base1/1_hires.png'}">`;
+        // Oponente fake (para esta demo, en real conectaría a socket)
+        document.getElementById('r-active').innerHTML = `<img src="https://images.pokemontcg.io/base1/4_hires.png">`;
+        alert("¡Moneda lanzada! Cara. Empiezas tú.");
     }
 
     function renderHand() {
@@ -263,44 +234,45 @@
             const img = document.createElement('img');
             img.src = card.img;
             img.className = "hand-card";
-            img.onclick = () => selectHandCard(i, img);
+            img.onclick = () => {
+                document.querySelectorAll('.hand-card').forEach(c => c.style.borderColor = "#555");
+                img.style.borderColor = var(--neon);
+                state.selectedHandIndex = i;
+            };
             container.appendChild(img);
         });
     }
 
-    function selectHandCard(index, el) {
-        document.querySelectorAll('.hand-card').forEach(c => c.style.transform = "none");
-        el.style.transform = "translateY(-20px)";
-        state.selectedHandCard = index;
-    }
-
-    function targetSlot(slotId) {
-        if(state.selectedHandCard === null) return;
-        const slot = slotId === 'active' ? document.getElementById('p-active') : event.currentTarget;
-        const card = state.hand[state.selectedHandCard];
+    function playInSlot(slotId) {
+        if(state.selectedHandIndex === null) return;
+        const slot = slotId === 'active' ? document.getElementById('p-active') : document.getElementById('p-bench').children[slotId.replace('b','')];
         
+        const card = state.hand[state.selectedHandIndex];
         slot.innerHTML = `<img src="${card.img}"><div class="energy-stack"></div>`;
-        state.hand.splice(state.selectedHandCard, 1);
-        state.selectedHandCard = null;
+        
+        state.hand.splice(state.selectedHandIndex, 1);
+        state.selectedHandIndex = null;
         renderHand();
     }
 
     function attachEnergy(type) {
-        const active = document.getElementById('p-active');
-        const stack = active.querySelector('.energy-stack');
-        if(!stack) return alert("Pon un Pokémon primero");
+        const activeSlot = document.getElementById('p-active');
+        const stack = activeSlot.querySelector('.energy-stack');
+        if(!stack) return alert("Primero coloca un Pokémon en el puesto Activo.");
+        
         const dot = document.createElement('div');
         dot.className = "en-dot";
         dot.style.background = state.energyColors[type];
         stack.appendChild(dot);
     }
 
-    function surrender() {
-        if(!confirm("¿Rendirse? Perderás puntos de Rango.")) return;
-        state.inMatch = false;
-        document.body.classList.remove('ingame-lock');
-        document.getElementById('battle-screen').style.display = 'none';
-        document.getElementById('lobby-ui').style.display = 'block';
+    function exitBattle() {
+        if(confirm("¿Rendirse y salir del duelo?")) {
+            state.inMatch = false;
+            document.body.classList.remove('ingame-lock');
+            document.getElementById('battle-screen').style.display = 'none';
+            document.getElementById('lobby-ui').style.display = 'block';
+        }
     }
 
     // --- SISTEMA ---
@@ -318,9 +290,7 @@
         localStorage.setItem('pm_deck', JSON.stringify(state.deck));
     }
 
-    function clearDeck() { state.deck = []; save(); renderDeckBuilder(); }
-
-    initCamera();
+    @keyframes spin { to { transform: rotate(360deg); } }
 </script>
 </body>
 </html>
