@@ -3,65 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PokeMaster Elite v22.0 - ULTIMATE STADIUM</title>
+    <title>PokeMaster Elite v23.0 - OFFICIAL TCG ENGINE</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --neon: #00f2ff; --red: #ff1f1f; --bg: #0a0a0c; --panel: #16161a; --text: #e0e0e0; --gold: #ffd700; --green: #00ff88; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); overflow-x: hidden; user-select: none; }
+        :root { --neon: #00f2ff; --red: #ff1f1f; --bg: #0a0a0c; --panel: #16161a; --text: #e0e0e0; --gold: #ffd700; --green: #00ff88; --energy-fire: #ff4422; --energy-water: #4499ff; --energy-grass: #77cc55; --energy-electric: #eedd44; --energy-psychic: #ff66aa; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); overflow: hidden; user-select: none; }
 
-        /* NAVEGACIÓN */
-        .top-nav { display: flex; background: #000; overflow-x: auto; position: sticky; top: 0; z-index: 1000; border-bottom: 2px solid var(--neon); scrollbar-width: none; }
-        .top-nav button { flex: 1; padding: 12px; border: none; background: none; color: #666; font-size: 0.6rem; font-weight: bold; cursor: pointer; text-transform: uppercase; min-width: 75px; transition: 0.3s; }
+        /* NAVEGACIÓN BLOQUEABLE */
+        .top-nav { display: flex; background: #000; position: sticky; top: 0; z-index: 1000; border-bottom: 2px solid var(--neon); }
+        .top-nav button { flex: 1; padding: 12px; border: none; background: none; color: #666; font-size: 0.6rem; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
         .top-nav button.active { color: var(--neon); background: rgba(0, 242, 255, 0.1); }
-        .top-nav button i { display: block; font-size: 1.1rem; margin-bottom: 4px; }
+        .top-nav.locked { opacity: 0.3; pointer-events: none; }
 
-        /* VISOR Y CAMARA */
+        /* VISOR */
         #vision-container { position: relative; width: 100%; aspect-ratio: 3/4; background: #000; overflow: hidden; border-bottom: 1px solid #333; }
         video, #freeze-canvas { width: 100%; height: 100%; object-fit: cover; position: absolute; }
-        #ghost-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 75%; opacity: 0.4; pointer-events: none; display: none; border: 2px dashed var(--neon); border-radius: 12px; z-index: 10; }
-        .cam-selector { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; border: 1px solid var(--neon); padding: 5px; border-radius: 5px; z-index: 100; font-size: 0.7rem; }
+        .cam-selector { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; border: 1px solid var(--neon); padding: 5px; border-radius: 5px; z-index: 100; }
 
-        /* ESTADO IA */
-        #ai-scanner-ui { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 100; display: none; background: rgba(0,0,0,0.85); padding: 10px; border-radius: 8px; border: 1px solid var(--neon); font-size: 0.7rem; }
-
-        .content { padding: 15px; padding-bottom: 100px; }
+        .content { padding: 15px; height: calc(100vh - 150px); overflow-y: auto; }
         .panel { display: none; }
-        .active-panel { display: block; animation: fadeIn 0.3s; }
+        .active-panel { display: block; }
 
-        /* TIENDA DE SOBRES (ARTES REALES) */
-        .pack-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
-        .pack-item { position: relative; cursor: pointer; transition: 0.3s; }
-        .pack-item:hover { transform: translateY(-5px); }
-        .pack-img { width: 100%; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); border: 1px solid #333; }
-        .pack-name { font-size: 0.7rem; font-weight: bold; text-align: center; margin-top: 5px; display: block; }
+        /* DECK BUILDER */
+        .deck-builder-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: var(--panel); padding: 10px; border-radius: 8px; border-left: 4px solid var(--neon); }
+        .inventory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .card-item { position: relative; cursor: pointer; }
+        .card-item img { width: 100%; border-radius: 5px; border: 2px solid transparent; }
+        .card-item.selected img { border-color: var(--neon); box-shadow: 0 0 10px var(--neon); }
+        .card-count { position: absolute; top: -5px; right: -5px; background: var(--red); color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; display: flex; align-items: center; justify-content: center; }
 
-        /* TCG STADIUM PRO */
-        .stadium-pro { background: #0d2b18; border: 4px solid #1a3a25; border-radius: 15px; height: 480px; position: relative; display: flex; flex-direction: column; justify-content: space-between; padding: 10px; overflow: hidden; }
-        .field-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 5px; }
-        .slot { border: 1px dashed rgba(255,255,255,0.2); border-radius: 5px; height: 60px; display: flex; align-items: center; justify-content: center; font-size: 0.4rem; color: #555; position: relative; background: rgba(0,0,0,0.2); }
-        .slot img { width: 100%; height: 100%; border-radius: 4px; object-fit: cover; }
-        .active-slot { height: 90px; border: 2px solid var(--gold); grid-column: span 1; }
-        .center-field { display: flex; justify-content: center; align-items: center; gap: 20px; flex-grow: 1; }
-
-        .hand-container { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.9); display: flex; gap: 8px; padding: 10px; overflow-x: auto; z-index: 2000; border-top: 2px solid var(--neon); }
-        .hand-card { min-width: 70px; height: 100px; border-radius: 5px; border: 1px solid #fff; cursor: pointer; transition: 0.2s; }
-        .hand-card:hover { transform: translateY(-10px); }
-
-        /* BOTONES */
-        .btn { background: var(--neon); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 0.8rem; margin: 5px 0; }
-        .btn-red { background: var(--red); color: white; }
-        .btn-gold { background: var(--gold); color: black; }
-
-        .battle-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        /* ESTADIO TCG PROFESIONAL */
+        .stadium-pro { background: radial-gradient(circle, #1a4a2a 0%, #0d2b18 100%); border: 3px solid #333; border-radius: 15px; height: 85vh; display: grid; grid-template-rows: 1fr 1fr; gap: 10px; padding: 10px; position: relative; box-shadow: inset 0 0 50px #000; }
+        .field-side { display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+        .bench { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; height: 60px; }
+        .active-spot { width: 85px; height: 120px; border: 2px solid var(--gold); margin: 0 auto; border-radius: 8px; background: rgba(255,215,0,0.05); position: relative; }
+        .slot { border: 1px dashed rgba(255,255,255,0.3); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 8px; color: #555; background: rgba(0,0,0,0.3); overflow: hidden; }
+        .slot img { width: 100%; height: 100%; object-fit: cover; }
         
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .loader { width: 48px; height: 48px; border: 5px solid #FFF; border-bottom-color: var(--neon); border-radius: 50%; display: inline-block; box-sizing: border-box; animation: rotation 1s linear infinite; }
-        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .deck-pile, .discard-pile { width: 45px; height: 65px; position: absolute; bottom: 0; border: 1px solid #555; border-radius: 4px; font-size: 8px; display: flex; align-items: center; justify-content: center; background: #222; }
+        .deck-pile { right: 0; background: repeating-linear-gradient(45deg, #222, #222 5px, #333 5px, #333 10px); }
+        .discard-pile { right: 50px; }
+        .prizes-pile { position: absolute; left: 0; top: 20%; display: flex; flex-direction: column; gap: 4px; }
+        .prize-card { width: 35px; height: 50px; background: #444; border: 1px solid #111; border-radius: 3px; }
+
+        /* MANO */
+        .hand-container { position: fixed; bottom: 0; left: 0; right: 0; height: 110px; background: rgba(0,0,0,0.8); display: flex; align-items: center; gap: 5px; padding: 0 10px; overflow-x: auto; z-index: 2000; border-top: 2px solid var(--neon); }
+        .hand-card { min-width: 70px; height: 100px; border-radius: 5px; transition: 0.2s; cursor: pointer; }
+        .hand-card:hover { transform: translateY(-15px) scale(1.1); z-index: 100; }
+
+        /* OVERLAYS */
+        .battle-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 5000; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        .win-screen { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 6000; flex-direction: column; align-items: center; justify-content: center; }
+
+        .energy-btn { padding: 5px 10px; border-radius: 20px; font-size: 10px; border: none; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<nav class="top-nav">
+<nav id="main-nav" class="top-nav">
     <button class="active" onclick="showTab('vf', this)"><i class="fas fa-fingerprint"></i> V/F</button>
     <button onclick="showTab('packs', this)"><i class="fas fa-shopping-bag"></i> Tienda</button>
     <button onclick="showTab('decks', this)"><i class="fas fa-clone"></i> Mazos</button>
@@ -69,263 +68,290 @@
     <button onclick="showTab('val', this)"><i class="fas fa-chart-line"></i> Valor</button>
 </nav>
 
-<div id="battle-start-ui" class="battle-overlay">
-    <div class="loader"></div>
-    <h1 id="battle-text" style="color:var(--neon); margin-top:20px">BUSCANDO RIVAL...</h1>
-    <p id="battle-subtext">Conectando con el servidor Global</p>
-    <button class="btn btn-red" style="width:200px" onclick="cancelMatchmaking()">CANCELAR</button>
-</div>
-
-<div id="vision-container">
-    <video id="video" autoplay playsinline></video>
-    <canvas id="freeze-canvas"></canvas>
-    <img id="ghost-overlay" src="">
-    <select id="camera-select" class="cam-selector" onchange="initCamera(this.value)"></select>
-    <div id="ai-scanner-ui">
-        <b id="ai-title" style="color:var(--neon)">ANALIZANDO...</b>
-        <div id="ai-checks"></div>
-    </div>
-</div>
-
 <div class="content">
     <div id="tab-vf" class="panel active-panel">
-        <input type="text" id="vfInput" placeholder="set/numero (ej: sv3pt5/151)" class="btn" style="background:#222; color:white; text-align:left; border: 1px solid #444">
-        <div style="display:flex; gap:10px; margin-top:10px">
-            <button class="btn" onclick="prepScan('front')">FRONTAL</button>
-            <button class="btn" onclick="prepScan('back')" style="background:#333; color:white">REVERSO</button>
+        <div id="vision-container">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="freeze-canvas"></canvas>
+            <img id="ghost-overlay" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:70%; opacity:0.4; display:none;">
+            <select id="camera-select" class="cam-selector" onchange="initCamera(this.value)"></select>
         </div>
-        <button id="btn-scan-ia" class="btn btn-red" onclick="executeAIScan()" style="display:none; padding:15px">INICIAR ESCANEO DEEP</button>
-        <button id="btn-add-dex" class="btn" onclick="addToDexFinal()" style="display:none; background:var(--green)">GUARDAR EN DEX</button>
+        <div style="padding:10px">
+            <input type="text" id="vfInput" placeholder="set/numero" class="btn" style="background:#222; color:white; text-align:left">
+            <div style="display:flex; gap:10px">
+                <button class="btn" onclick="prepScan('front')">FRONTAL</button>
+                <button class="btn" onclick="prepScan('back')">REVERSO</button>
+            </div>
+            <button id="btn-scan-ia" class="btn btn-red" onclick="executeAIScan()" style="display:none">ANALIZAR AUTENTICIDAD</button>
+        </div>
     </div>
 
     <div id="tab-packs" class="panel">
-        <div style="margin-bottom:15px; display:flex; justify-content:space-between">
-            <span>Disponibles: <b id="daily-count" style="color:var(--neon)">10</b></span>
-            <small style="color:#666">Recarga en 24h</small>
-        </div>
-        <div class="pack-grid">
-            <div class="pack-item" onclick="openPack('sv3pt5')">
-                <img src="https://m.media-amazon.com/images/I/71Y-tL7FmEL._AC_SL1500_.jpg" class="pack-img">
-                <span class="pack-name">151 SCARLET & VIOLET</span>
+        <h2 style="color:var(--neon)">TIENDA DE SOBRES</h2>
+        <div class="pack-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:15px">
+            <div class="card-item" onclick="openPack('sv3pt5')">
+                <img src="https://m.media-amazon.com/images/I/71Y-tL7FmEL._AC_SL1500_.jpg">
+                <center><small>151 SPECIAL</small></center>
             </div>
-            <div class="pack-item" onclick="openPack('swsh11')">
-                <img src="https://m.media-amazon.com/images/I/81U2vD6-UoL._AC_SL1500_.jpg" class="pack-img">
-                <span class="pack-name">LOST ORIGIN</span>
-            </div>
-            <div class="pack-item" onclick="openPack('base1')">
-                <img src="https://i.ebayimg.com/images/g/p7AAAOSw4P9jL-8P/s-l1600.jpg" class="pack-img">
-                <span class="pack-name">BASE SET (VINTAGE)</span>
-            </div>
-            <div class="pack-item" onclick="openPack('swsh4')">
-                <img src="https://m.media-amazon.com/images/I/81mD0TtoG8L._AC_SL1500_.jpg" class="pack-img">
-                <span class="pack-name">VIVID VOLTAGE</span>
+            <div class="card-item" onclick="openPack('base1')">
+                <img src="https://i.ebayimg.com/images/g/p7AAAOSw4P9jL-8P/s-l1600.jpg">
+                <center><small>BASE SET (VINTAGE)</small></center>
             </div>
         </div>
-        <div id="pack-results" style="margin-top:20px; display:grid; grid-template-columns: repeat(5, 1fr); gap:5px"></div>
+        <div id="pack-results" style="display:grid; grid-template-columns:repeat(5,1fr); gap:2px; margin-top:15px"></div>
     </div>
 
     <div id="tab-decks" class="panel">
-        <div style="background:var(--panel); padding:15px; border-radius:10px">
-            <h3>MI DECK CURRENT</h3>
-            <select id="deck-filter" class="btn" style="background:#222; color:white" onchange="renderDeckBuilder()">
-                <option value="amistoso">AMISTOSO (TODO)</option>
-                <option value="competi">COMPETITIVO (SOBRES)</option>
-            </select>
-            <div id="deck-builder-grid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; margin-top:15px"></div>
+        <div class="deck-builder-header">
+            <div>
+                <b id="deck-count">0</b>/60 Cartas
+                <div id="deck-status" style="font-size:10px; color:var(--red)">INCOMPLETO</div>
+            </div>
+            <button class="btn" style="width:100px" onclick="saveDeck()">GUARDAR</button>
         </div>
+        <div style="display:flex; gap:5px; margin-bottom:10px">
+            <button class="energy-btn" style="background:var(--energy-fire)" onclick="addEnergy('Fuego')">+🔥</button>
+            <button class="energy-btn" style="background:var(--energy-water)" onclick="addEnergy('Agua')">+💧</button>
+            <button class="energy-btn" style="background:var(--energy-grass)" onclick="addEnergy('Planta')">+🌿</button>
+            <button class="energy-btn" style="background:var(--energy-electric)" onclick="addEnergy('Rayo')">+⚡</button>
+        </div>
+        <div id="inventory-grid" class="inventory-grid"></div>
     </div>
 
     <div id="tab-tcg" class="panel">
-        <div style="display:flex; gap:5px; margin-bottom:10px">
-            <button class="btn btn-gold" onclick="startMatchmaking('competi')" style="flex:2">BUSCAR RANKED</button>
-            <button class="btn" onclick="startMatchmaking('amistoso')" style="flex:2">AMISTOSO</button>
-            <button class="btn btn-red" onclick="inviteWhatsApp()" style="flex:1"><i class="fab fa-whatsapp"></i></button>
+        <div id="matchmaking-ui" style="text-align:center; padding:20px">
+            <button class="btn btn-gold" onclick="startBattle('ranked')">BUSCAR RIVAL REAL (RANKED)</button>
+            <button class="btn" onclick="startBattle('friendly')">DUELO AMISTOSO</button>
+            <p style="font-size:12px; color:#666">Se requiere un mazo de 60 cartas validado.</p>
         </div>
-        
-        <div class="stadium-pro">
-            <div class="field-row">
-                <div class="slot">Premio</div><div class="slot">Premio</div><div class="slot">Premio</div><div class="slot">Mazo</div><div class="slot">Desc.</div>
-            </div>
-            <div class="center-field">
-                <div class="slot active-slot" id="r-active" style="transform: rotate(180deg)">Rival</div>
-                <div class="slot active-slot" id="p-active">Tú</div>
-            </div>
-            <div class="field-row">
-                <div class="slot" id="p-mazo">Mazo</div><div class="slot" id="p-desc">Desc.</div><div class="slot">P1</div><div class="slot">P2</div><div class="slot">P3</div>
-            </div>
-        </div>
-        <div id="player-hand" class="hand-container"></div>
-    </div>
 
-    <div id="tab-val" class="panel">
-        <input type="text" id="priceInput" placeholder="set/numero (ej: swsh11/196)" class="btn" style="background:#222; color:white; text-align:left">
-        <button class="btn" onclick="getRealPrice()">CONSULTAR MARKET TCGPLAYER</button>
-        <div id="price-res" style="margin-top:20px"></div>
+        <div id="game-board" style="display:none">
+            <div class="stadium-pro">
+                <div class="field-side" style="transform: rotate(180deg)">
+                    <div class="bench">
+                        <div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
+                    </div>
+                    <div class="active-spot slot" id="rival-active"></div>
+                    <div class="deck-pile">RIVAL</div>
+                </div>
+
+                <div class="field-side">
+                    <div class="prizes-pile" id="p-prizes">
+                        <div class="prize-card"></div><div class="prize-card"></div><div class="prize-card"></div>
+                        <div class="prize-card"></div><div class="prize-card"></div><div class="prize-card"></div>
+                    </div>
+                    <div class="active-spot slot" id="player-active" onclick="handleFieldClick('active')"></div>
+                    <div class="bench" id="player-bench">
+                        <div class="slot" onclick="handleFieldClick('bench', 0)"></div>
+                        <div class="slot" onclick="handleFieldClick('bench', 1)"></div>
+                        <div class="slot" onclick="handleFieldClick('bench', 2)"></div>
+                        <div class="slot" onclick="handleFieldClick('bench', 3)"></div>
+                        <div class="slot" onclick="handleFieldClick('bench', 4)"></div>
+                    </div>
+                    <div class="discard-pile" id="p-discard">Discard</div>
+                    <div class="deck-pile" id="p-deck-count">60</div>
+                </div>
+                
+                <div style="position:absolute; right:10px; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:10px">
+                    <button class="btn btn-red" style="width:80px; font-size:10px" onclick="endTurn()">PASAR TURNO</button>
+                    <button class="btn btn-gold" style="width:80px; font-size:10px" onclick="attack()">ATACAR</button>
+                </div>
+            </div>
+            <div id="player-hand" class="hand-container"></div>
+        </div>
     </div>
 </div>
 
+<div id="battle-start-ui" class="battle-overlay">
+    <div class="loader"></div>
+    <h2 id="battle-text" style="color:var(--neon)">CONECTANDO...</h2>
+    <div id="rival-info"></div>
+</div>
+
 <script>
+    // ESTADO GLOBAL
     let state = {
-        dex: JSON.parse(localStorage.getItem('pm_dex') || '[]'),
-        packCards: JSON.parse(localStorage.getItem('pm_packs') || '[]'),
-        dailyPacks: parseInt(localStorage.getItem('pm_daily') || '10'),
-        scanLock: { front: false, back: false, id: '' }
+        inventory: JSON.parse(localStorage.getItem('pm_inv') || '[]'),
+        deck: JSON.parse(localStorage.getItem('pm_deck') || '[]'),
+        daily: 10,
+        currentHand: [],
+        gameDeck: [],
+        turn: 'player',
+        selectedCardIdx: null
     };
 
-    // --- CAMARA Y SELECTOR ---
-    async function initCamera(deviceId = null) {
-        const select = document.getElementById('camera-select');
-        try {
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const videoDevices = devices.filter(d => d.kind === 'videoinput');
-            
-            if(select.options.length === 0) {
-                videoDevices.forEach(d => {
-                    const opt = document.createElement('option');
-                    opt.value = d.deviceId;
-                    opt.text = d.label || `Cámara ${select.length + 1}`;
-                    select.appendChild(opt);
-                });
-            }
-
-            const constraints = { 
-                video: { deviceId: deviceId ? { exact: deviceId } : undefined, facingMode: deviceId ? undefined : "environment" } 
-            };
-            const stream = await navigator.mediaDevices.getUserMedia(constraints);
-            document.getElementById('video').srcObject = stream;
-        } catch(e) { console.error(e); }
+    // --- SISTEMA DE MAZOS (60 CARTAS) ---
+    function renderDeckBuilder() {
+        const grid = document.getElementById('inventory-grid');
+        grid.innerHTML = "";
+        
+        // Mostrar cartas del inventario
+        state.inventory.forEach((card, idx) => {
+            const countInDeck = state.deck.filter(c => c.id === card.id).length;
+            const div = document.createElement('div');
+            div.className = `card-item ${countInDeck > 0 ? 'selected' : ''}`;
+            div.onclick = () => toggleCardInDeck(card);
+            div.innerHTML = `
+                <img src="${card.img}">
+                ${countInDeck > 0 ? `<div class="card-count">${countInDeck}</div>` : ''}
+            `;
+            grid.appendChild(div);
+        });
+        updateDeckStatus();
     }
 
-    // --- LÓGICA V/F ---
-    function prepScan(mode) {
-        const id = document.getElementById('vfInput').value.trim();
-        if(!id.includes('/')) return alert("Formato: set/numero");
-        state.scanLock.id = id;
-        const ghost = document.getElementById('ghost-overlay');
-        ghost.src = (mode === 'front') ? `https://images.pokemontcg.io/${id}_hires.png` : "https://images.pokemontcg.io/swsh1/back.png";
-        ghost.style.display = 'block';
-        document.getElementById('btn-scan-ia').style.display = 'block';
-        document.getElementById('btn-scan-ia').dataset.mode = mode;
+    function toggleCardInDeck(card) {
+        const count = state.deck.filter(c => c.id === card.id).length;
+        if(count < 4 && state.deck.length < 60) {
+            state.deck.push(card);
+        } else {
+            const idx = state.deck.findIndex(c => c.id === card.id);
+            if(idx > -1) state.deck.splice(idx, 1);
+        }
+        renderDeckBuilder();
     }
 
-    function executeAIScan() {
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('freeze-canvas');
-        const mode = document.getElementById('btn-scan-ia').dataset.mode;
-        
-        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0);
-        
-        // Anti-fraude: Validar contraste
-        const frame = ctx.getImageData(0,0, canvas.width, canvas.height);
-        let pix = 0; for(let i=0; i<frame.data.length; i+=4) pix += frame.data[i];
-        const avg = pix / (frame.data.length/4);
+    function addEnergy(type) {
+        if(state.deck.length < 60) {
+            state.deck.push({ id: 'energy-'+type, type: 'energy', name: type, img: 'https://images.pokemontcg.io/swsh1/200_hires.png' });
+            renderDeckBuilder();
+        }
+    }
 
-        video.style.display = 'none'; canvas.style.display = 'block';
-        document.getElementById('ai-scanner-ui').style.display = 'block';
-        
-        const checks = document.getElementById('ai-checks');
-        checks.innerHTML = "";
-        const points = mode === 'front' ? ['Tipografía','Foil-Pattern','Copyright','Border'] : ['Blue-Tint','Symmetry','Texture','Paper-Density'];
-        let score = 0;
+    function updateDeckStatus() {
+        const count = state.deck.length;
+        document.getElementById('deck-count').innerText = count;
+        const status = document.getElementById('deck-status');
+        if(count === 60) {
+            status.innerText = "VALIDO PARA COMPETIR";
+            status.style.color = "var(--green)";
+        } else {
+            status.innerText = "INCOMPLETO (Faltan " + (60 - count) + ")";
+            status.style.color = "var(--red)";
+        }
+    }
 
-        points.forEach((p, i) => {
+    function saveDeck() {
+        localStorage.setItem('pm_deck', JSON.stringify(state.deck));
+        alert("Mazo guardado.");
+    }
+
+    // --- MOTOR DE BATALLA ---
+    function startBattle(mode) {
+        if(state.deck.length !== 60) return alert("Tu mazo debe tener 60 cartas exactamente.");
+        
+        const overlay = document.getElementById('battle-start-ui');
+        overlay.style.display = 'flex';
+        document.getElementById('main-nav').classList.add('locked');
+
+        // Simulación de Matchmaking con WebSockets (Mock)
+        setTimeout(() => {
+            document.getElementById('battle-text').innerText = "RIVAL ENCONTRADO: Ash_Ketchum_99";
             setTimeout(() => {
-                const pass = (avg > 50 && avg < 200) ? Math.random() > 0.1 : false;
-                if(pass) score++;
-                checks.innerHTML += `<div style="color:${pass?'#0f8':'#f22'}">${p}: ${pass?'OK':'FAIL'}</div>`;
-                if(i === 3) finalizeScan(score === 4, mode);
-            }, i * 600);
+                overlay.style.display = 'none';
+                document.getElementById('matchmaking-ui').style.display = 'none';
+                document.getElementById('game-board').style.display = 'block';
+                initGameLogic();
+            }, 2000);
+        }, 3000);
+    }
+
+    function initGameLogic() {
+        // Barajar
+        state.gameDeck = [...state.deck].sort(() => Math.random() - 0.5);
+        
+        // Robar 7 iniciales
+        state.currentHand = state.gameDeck.splice(0, 7);
+        
+        // Poner premios (6)
+        document.getElementById('p-prizes').innerHTML = '<div class="prize-card"></div>'.repeat(6);
+        
+        renderHand();
+        updateDeckCount();
+    }
+
+    function renderHand() {
+        const handDiv = document.getElementById('player-hand');
+        handDiv.innerHTML = "";
+        state.currentHand.forEach((card, idx) => {
+            const img = document.createElement('img');
+            img.src = card.img;
+            img.className = "hand-card";
+            img.onclick = () => selectHandCard(idx);
+            handDiv.appendChild(img);
         });
     }
 
-    function finalizeScan(ok, mode) {
-        if(ok) {
-            state.scanLock[mode] = true;
-            document.getElementById('ai-title').innerText = "AUTÉNTICO";
-            document.getElementById('ai-title').style.color = "var(--green)";
-        } else {
-            alert("NO SE DETECTÓ CARTA POKÉMON ORIGINAL.");
-            resetVF();
-        }
-        if(state.scanLock.front && state.scanLock.back) document.getElementById('btn-add-dex').style.display = 'block';
+    function selectHandCard(idx) {
+        state.selectedCardIdx = idx;
+        const cards = document.querySelectorAll('.hand-card');
+        cards.forEach(c => c.style.border = "none");
+        cards[idx].style.border = "3px solid var(--gold)";
     }
 
-    // --- TIENDA (10 CARTAS POR SOBRE) ---
-    function openPack(setId) {
-        if(state.dailyPacks <= 0) return alert("Sin sobres. Vuelve mañana.");
-        state.dailyPacks--;
-        document.getElementById('daily-count').innerText = state.dailyPacks;
+    function handleFieldClick(zone, benchIdx) {
+        if(state.selectedCardIdx === null) return;
         
-        const res = document.getElementById('pack-results');
-        res.innerHTML = "";
-        for(let i=0; i<10; i++) {
-            const num = Math.floor(Math.random() * 120) + 1;
-            const card = { id: `${setId}/${num}`, img: `https://images.pokemontcg.io/${setId}/${num}_hires.png` };
-            state.packCards.push(card);
-            const img = document.createElement('img');
-            img.src = card.img; img.style.width = "100%"; img.style.borderRadius = "3px";
-            res.appendChild(img);
+        const card = state.currentHand[state.selectedCardIdx];
+        
+        if(zone === 'active') {
+            const activeSpot = document.getElementById('player-active');
+            if(!activeSpot.innerHTML) {
+                activeSpot.innerHTML = `<img src="${card.img}">`;
+                state.currentHand.splice(state.selectedCardIdx, 1);
+            }
+        } else if(zone === 'bench') {
+            const benchSlots = document.querySelectorAll('#player-bench .slot');
+            if(!benchSlots[benchIdx].innerHTML) {
+                benchSlots[benchIdx].innerHTML = `<img src="${card.img}">`;
+                state.currentHand.splice(state.selectedCardIdx, 1);
+            }
         }
-        saveData();
+        
+        state.selectedCardIdx = null;
+        renderHand();
     }
 
-    // --- MATCHMAKING Y TCG ---
-    function startMatchmaking(mode) {
-        const overlay = document.getElementById('battle-start-ui');
-        overlay.style.display = 'flex';
-        document.getElementById('battle-text').innerText = `BUSCANDO PARTIDA ${mode.toUpperCase()}...`;
-        
-        setTimeout(() => {
-            document.getElementById('battle-text').innerText = "¡RIVAL ENCONTRADO!";
+    function endTurn() {
+        if(state.turn === 'player') {
+            state.turn = 'rival';
+            alert("Turno del rival...");
             setTimeout(() => {
-                overlay.style.display = 'none';
-                initTCGBattle();
-            }, 1500);
-        }, 3500);
-    }
-
-    function cancelMatchmaking() { document.getElementById('battle-start-ui').style.display = 'none'; }
-
-    function inviteWhatsApp() {
-        const url = `https://pokemaster.ai/battle/${Math.random().toString(36).substr(2,9)}`;
-        window.open(`https://wa.me/?text=${encodeURIComponent("¿Eres lo suficientemente fuerte? Entra y pelea: " + url)}`);
-        startMatchmaking('INVITACIÓN');
-    }
-
-    function initTCGBattle() {
-        const hand = document.getElementById('player-hand');
-        hand.innerHTML = "";
-        const pool = state.packCards.length > 7 ? state.packCards : state.dex;
-        if(pool.length < 7) return alert("Necesitas al menos 7 cartas.");
-        
-        for(let i=0; i<7; i++) {
-            const c = pool[Math.floor(Math.random()*pool.length)];
-            hand.innerHTML += `<img src="${c.img}" class="hand-card" onclick="playCard(this)">`;
+                // Simulación IA Rival
+                const rivalActive = document.getElementById('rival-active');
+                rivalActive.innerHTML = `<img src="https://images.pokemontcg.io/base1/4_hires.png">`;
+                alert("El rival ataca con Charizard! 100 de daño.");
+                state.turn = 'player';
+                // Robar carta de turno
+                state.currentHand.push(state.gameDeck.pop());
+                renderHand();
+                updateDeckCount();
+            }, 2000);
         }
-        alert("¡Moneda lanzada! Empiezas tú. Robas 7 cartas.");
     }
 
-    function playCard(el) {
-        document.getElementById('p-active').innerHTML = `<img src="${el.src}">`;
-        el.remove();
+    function attack() {
+        const playerActive = document.getElementById('player-active');
+        if(!playerActive.innerHTML) return alert("No tienes pokémon activo.");
+        alert("¡Ataque ejecutado! El rival recibe daño.");
     }
 
-    // --- UTILS ---
-    async function getRealPrice() {
-        const id = document.getElementById('priceInput').value;
-        const res = document.getElementById('price-res');
-        res.innerHTML = "<div class='loader'></div> Consultando API...";
-        setTimeout(() => {
-            res.innerHTML = `
-                <div style="background:var(--panel); padding:15px; border-radius:10px; border:1px solid var(--neon)">
-                    <img src="https://images.pokemontcg.io/${id}_hires.png" style="width:80px; float:left; margin-right:15px">
-                    <small>TCGPLAYER MARKET PRICE</small><br>
-                    <b style="font-size:1.4rem; color:var(--green)">$${(Math.random()*85 + 5).toFixed(2)} USD</b><br>
-                    <small>Actualizado hace 5 min</small>
-                </div>`;
-        }, 1200);
+    function updateDeckCount() {
+        document.getElementById('p-deck-count').innerText = state.gameDeck.length;
+    }
+
+    // --- FUNCIONES EXTRA ---
+    function openPack(setId) {
+        const results = document.getElementById('pack-results');
+        results.innerHTML = "";
+        for(let i=0; i<10; i++){
+            const num = Math.floor(Math.random() * 102) + 1;
+            const card = { id: setId+'-'+num, img: `https://images.pokemontcg.io/${setId}/${num}_hires.png` };
+            state.inventory.push(card);
+            results.innerHTML += `<img src="${card.img}" style="width:100%">`;
+        }
+        localStorage.setItem('pm_inv', JSON.stringify(state.inventory));
+        renderDeckBuilder();
     }
 
     function showTab(id, btn) {
@@ -333,35 +359,22 @@
         document.querySelectorAll('.top-nav button').forEach(b => b.classList.remove('active'));
         document.getElementById('tab-' + id).classList.add('active-panel');
         btn.classList.add('active');
-        document.getElementById('vision-container').style.display = (id === 'vf') ? 'block' : 'none';
         if(id === 'decks') renderDeckBuilder();
     }
 
-    function renderDeckBuilder() {
-        const grid = document.getElementById('deck-builder-grid');
-        const mode = document.getElementById('deck-filter').value;
-        const cards = (mode === 'competi') ? state.packCards : state.dex.concat(state.packCards);
-        grid.innerHTML = cards.map(c => `<img src="${c.img}" style="width:100%; border-radius:4px">`).join('');
+    // Inicialización de Cámara
+    async function initCamera(deviceId) {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: deviceId ? {exact: deviceId} : undefined, facingMode: 'environment'} });
+        document.getElementById('video').srcObject = stream;
     }
 
-    function saveData() {
-        localStorage.setItem('pm_dex', JSON.stringify(state.dex));
-        localStorage.setItem('pm_packs', JSON.stringify(state.packCards));
-        localStorage.setItem('pm_daily', state.dailyPacks);
-    }
-
-    function addToDexFinal() {
-        state.dex.push({ id: state.scanLock.id, img: `https://images.pokemontcg.io/${state.scanLock.id}_hires.png` });
-        saveData(); alert("Carta añadida a tu Dex."); resetVF();
-    }
-
-    function resetVF() {
-        document.getElementById('video').style.display = 'block';
-        document.getElementById('freeze-canvas').style.display = 'none';
-        document.getElementById('ai-scanner-ui').style.display = 'none';
-        document.getElementById('ghost-overlay').style.display = 'none';
-        state.scanLock = { front: false, back: false, id: '' };
-    }
+    // Setup inicial de cámaras
+    navigator.mediaDevices.enumerateDevices().then(devices => {
+        const select = document.getElementById('camera-select');
+        devices.filter(d => d.kind === 'videoinput').forEach(d => {
+            select.innerHTML += `<option value="${d.deviceId}">${d.label || 'Cam'}</option>`;
+        });
+    });
 
     initCamera();
 </script>
