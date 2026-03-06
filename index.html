@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PokeMaster Elite v12.0 - ANTI-NETWORK ERROR</title>
+    <title>PokeMaster Elite v15.0 - NO API EDITION</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --neon: #00f2ff; --red: #ff1f1f; --bg: #0d0d0d; --panel: #1a1a1e; --text: #e0e0e0; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); overflow-x: hidden; }
 
+        /* NAVEGACIÓN */
         .top-nav { 
             display: flex; background: #000; overflow-x: auto; position: sticky; top: 0; z-index: 1000;
             border-bottom: 2px solid var(--neon); scrollbar-width: none;
@@ -19,7 +20,9 @@
             min-width: 90px; transition: 0.3s;
         }
         .top-nav button.active { color: var(--neon); background: rgba(0, 242, 255, 0.1); }
+        .top-nav button i { display: block; font-size: 1.2rem; margin-bottom: 4px; }
 
+        /* VISOR Y CÁMARA */
         #vision-container { position: relative; width: 100%; aspect-ratio: 3/4; background: #000; border-bottom: 1px solid #333; display: block; overflow: hidden; }
         video { width: 100%; height: 100%; object-fit: cover; }
         #ghost-overlay { 
@@ -32,6 +35,7 @@
         .cam-bar { background: #111; padding: 10px; display: flex; align-items: center; gap: 10px; font-size: 0.8rem; }
         select { background: #222; color: var(--neon); border: 1px solid var(--neon); padding: 8px; border-radius: 5px; flex: 1; font-size: 14px; outline: none; }
 
+        /* CONTENIDO GENERAL */
         .content { padding: 15px; }
         .panel { display: none; }
         .active-panel { display: block; animation: fadeIn 0.4s; }
@@ -39,16 +43,15 @@
         .search-box { display: flex; gap: 8px; margin-bottom: 15px; }
         input { flex: 1; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 8px; outline: none; font-size: 16px; }
         .btn { background: var(--neon); color: #000; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; }
-        
+
+        /* RESULTADOS Y CARTAS */
         .res-card { background: var(--panel); padding: 12px; border-radius: 12px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; border: 1px solid #333; }
-        .price { color: #00ff88; font-weight: bold; }
-
-        .dex-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; }
-        .dex-item { background: var(--panel); padding: 8px; border-radius: 10px; text-align: center; border: 1px solid #444; }
-        .dex-item img { width: 100%; border-radius: 5px; }
-
-        .deck-card { background: var(--panel); border-radius: 12px; padding: 15px; margin-bottom: 15px; border-left: 4px solid var(--neon); }
-        .deck-list { display: none; margin-top: 10px; font-size: 0.85rem; color: #aaa; background: #000; padding: 10px; border-radius: 8px; border: 1px dashed #444; }
+        
+        /* GRID DE DECKS Y DEX */
+        .deck-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+        .deck-card-img { width: 100%; border-radius: 5px; border: 1px solid #333; transition: 0.2s; }
+        .deck-card-img:active { transform: scale(1.5); z-index: 100; position: relative; }
+        .deck-title { background: var(--panel); padding: 10px; border-radius: 8px; border-left: 4px solid var(--neon); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -63,6 +66,7 @@
 </nav>
 
 <div id="cam-controls" class="cam-bar">
+    <i class="fas fa-video" style="color: var(--neon)"></i>
     <select id="camSelect" onchange="initCamera()"></select>
     <button class="btn" style="padding: 5px 10px;" onclick="initCamera()"><i class="fas fa-sync-alt"></i></button>
 </div>
@@ -75,38 +79,40 @@
 <div class="content">
     <div id="tab-val" class="panel active-panel">
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Nombre (ej: Venonat)">
-            <button class="btn" onclick="masterSearch('val')"><i class="fas fa-search"></i></button>
+            <input type="text" id="valInput" placeholder="set/numero (ej: base1/4)">
+            <button class="btn" onclick="directLoad('val')"><i class="fas fa-search"></i></button>
         </div>
         <div id="results-val"></div>
     </div>
 
     <div id="tab-vf" class="panel">
         <div class="search-box">
-            <input type="text" id="vfInput" placeholder="set/id (ej: base1/1)">
-            <button class="btn" onclick="masterSearch('vf')">CARGAR GUÍA</button>
+            <input type="text" id="vfInput" placeholder="set/numero (ej: sv3pt5/151)">
+            <button class="btn" onclick="directLoad('vf')">CARGAR GUÍA</button>
         </div>
         <div style="display:flex; gap:10px; margin-bottom:15px">
             <button class="btn" style="flex:1" onclick="toggleGhost('front')">FRENTE</button>
             <button class="btn" style="flex:1; background:#333; color:white;" onclick="toggleGhost('back')">REVERSO</button>
         </div>
         <input type="range" min="0" max="100" value="50" style="width:100%; accent-color: var(--neon);" oninput="document.getElementById('ghost-overlay').style.opacity = this.value/100">
-        <p style="font-size: 0.7rem; color: #888; margin-top: 5px;">*Usa formato 'set/numero' (ej: base1/48) para evitar errores.</p>
     </div>
 
     <div id="tab-dex" class="panel">
-        <div id="dex-list" class="dex-grid"></div>
+        <div id="dex-list" class="deck-grid"></div>
     </div>
 
     <div id="tab-decks" class="panel">
-        <div class="deck-card">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <b>Charizard ex (Meta)</b>
-                <button class="btn" style="padding:5px 10px" onclick="toggleDeck('list-zard')">Ver</button>
-            </div>
-            <div id="list-zard" class="deck-list">
-                • 3 Charizard ex (OBF 125)<br>• 2 Pidgeot ex (OBF 164)<br>• 4 Charmander / 1 Charmeleon
-            </div>
+        <div class="deck-title">
+            <b>Charizard ex Meta Deck</b>
+            <button class="btn" style="padding:5px" onclick="toggleDeck('grid-zard')">Ver</button>
+        </div>
+        <div id="grid-zard" class="deck-grid" style="display:none;">
+            <img class="deck-card-img" src="https://images.pokemontcg.io/sv3/125_hires.png">
+            <img class="deck-card-img" src="https://images.pokemontcg.io/sv3/125_hires.png">
+            <img class="deck-card-img" src="https://images.pokemontcg.io/sv3/125_hires.png">
+            <img class="deck-card-img" src="https://images.pokemontcg.io/sv3/164_hires.png">
+            <img class="deck-card-img" src="https://images.pokemontcg.io/sv3/164_hires.png">
+            <img class="deck-card-img" src="https://images.pokemontcg.io/swsh12/153_hires.png">
         </div>
     </div>
 </div>
@@ -116,6 +122,7 @@
     let vfGhostImg = "";
     const BACK_IMAGE = "https://images.pokemontcg.io/swsh1/back.png";
 
+    // --- CÁMARA ---
     async function initCamera() {
         if (activeStream) activeStream.getTracks().forEach(t => t.stop());
         const id = document.getElementById('camSelect').value;
@@ -127,72 +134,45 @@
         } catch (e) { console.warn("Error cámara"); }
     }
 
-    async function masterSearch(type) {
-        const inputId = type === 'val' ? 'searchInput' : 'vfInput';
+    // --- CARGA DIRECTA (SIN ERRORES DE RED) ---
+    function directLoad(type) {
+        const inputId = type === 'val' ? 'valInput' : 'vfInput';
         const q = document.getElementById(inputId).value.trim();
-        if(!q) return;
+        if(!q.includes('/')) return alert("Usa: set/numero (ej: base1/4)");
 
-        if (type === 'vf') {
-            const overlay = document.getElementById('ghost-overlay');
-            if (q.includes('/')) {
-                // CARGA DIRECTA DE IMAGEN (SALTA LA API)
-                vfGhostImg = `https://images.pokemontcg.io/${q}_hires.png`;
-                overlay.src = vfGhostImg;
-                overlay.style.display = 'block';
-                return;
-            }
-        }
-
-        const resultsDiv = document.getElementById('results-val');
-        if(type === 'val') resultsDiv.innerHTML = "Buscando...";
-
-        try {
-            const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:"${q}"*&pageSize=5`);
-            const json = await res.json();
-            if(json.data && json.data.length > 0) {
-                processResults(json.data, type);
-            } else {
-                if(type === 'val') resultsDiv.innerHTML = "No se encontraron cartas.";
-            }
-        } catch (e) {
-            if(type === 'val') resultsDiv.innerHTML = "Error de red. Intenta de nuevo.";
-            else alert("Error de red. Usa set/numero (ej: base1/1)");
-        }
-    }
-
-    function processResults(data, type) {
-        if(type === 'val') {
-            document.getElementById('results-val').innerHTML = data.map(c => `
-                <div class="res-card">
-                    <img src="${c.images.small}" width="60">
-                    <div style="flex:1">
-                        <b style="color:var(--neon)">${c.name}</b><br>
-                        <small>${c.set.id} #${c.number}</small><br>
-                        <span class="price">$${c.tcgplayer?.prices?.holofoil?.market || c.tcgplayer?.prices?.normal?.market || 'N/A'}</span>
-                    </div>
-                    <button class="btn" onclick="saveToDex('${c.name}', '${c.images.small}')">+</button>
-                </div>`).join('');
-        } else {
-            vfGhostImg = data[0].images.large;
+        const imgUrl = `https://images.pokemontcg.io/${q}_hires.png`;
+        
+        if(type === 'vf') {
+            vfGhostImg = imgUrl;
             const g = document.getElementById('ghost-overlay');
-            g.src = vfGhostImg;
+            g.src = imgUrl;
             g.style.display = 'block';
+        } else {
+            document.getElementById('results-val').innerHTML = `
+                <div class="res-card">
+                    <img src="${imgUrl}" width="80">
+                    <div style="flex:1">
+                        <b style="color:var(--neon)">ID: ${q}</b><br>
+                        <span style="color:#00ff88">CARGA DIRECTA OK</span>
+                    </div>
+                    <button class="btn" onclick="saveToDex('${q}', '${imgUrl}')">+</button>
+                </div>`;
         }
     }
 
     function toggleGhost(mode) {
         const g = document.getElementById('ghost-overlay');
-        if(!vfGhostImg && mode === 'front') return alert("Carga una carta primero.");
         g.src = (mode === 'front') ? vfGhostImg : BACK_IMAGE;
         g.style.display = 'block';
     }
 
+    // --- NAVEGACIÓN ---
     function showTab(tabId, btn) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active-panel'));
         document.querySelectorAll('.top-nav button').forEach(b => b.classList.remove('active'));
         document.getElementById('tab-' + tabId).classList.add('active-panel');
         btn.classList.add('active');
-        
+
         if (['val', 'vf'].includes(tabId)) {
             document.getElementById('vision-container').style.display = 'block';
             document.getElementById('cam-controls').style.display = 'flex';
@@ -200,29 +180,29 @@
         } else {
             document.getElementById('vision-container').style.display = 'none';
             document.getElementById('cam-controls').style.display = 'none';
-            if (activeStream) activeStream.getTracks().forEach(t => t.stop());
         }
         if(tabId === 'dex') renderDex();
     }
 
-    function saveToDex(name, img) {
-        let dex = JSON.parse(localStorage.getItem('pokedex_v10') || '[]');
-        dex.push({ name, img });
-        localStorage.setItem('pokedex_v10', JSON.stringify(dex));
-        alert("¡Guardada en Mi Dex!");
+    // --- MI DEX ---
+    function saveToDex(id, img) {
+        let dex = JSON.parse(localStorage.getItem('my_pokedex') || '[]');
+        dex.push({ id, img });
+        localStorage.setItem('my_pokedex', JSON.stringify(dex));
+        alert("¡Guardada!");
     }
 
     function renderDex() {
-        const dex = JSON.parse(localStorage.getItem('pokedex_v10') || '[]');
-        const container = document.getElementById('dex-list');
-        container.innerHTML = dex.length ? dex.map(c => `<div class="dex-item"><img src="${c.img}"><p>${c.name}</p></div>`).join('') : "<p>Tu Dex está vacío.</p>";
+        const dex = JSON.parse(localStorage.getItem('my_pokedex') || '[]');
+        document.getElementById('dex-list').innerHTML = dex.map(c => `<img class="deck-card-img" src="${c.img}">`).join('');
     }
 
     function toggleDeck(id) {
         const el = document.getElementById(id);
-        el.style.display = el.style.display === 'block' ? 'none' : 'block';
+        el.style.display = el.style.display === 'none' ? 'grid' : 'none';
     }
 
+    // Iniciar Cámaras
     navigator.mediaDevices.enumerateDevices().then(devices => {
         const videoIn = devices.filter(d => d.kind === 'videoinput');
         document.getElementById('camSelect').innerHTML = videoIn.map((d,i) => `<option value="${d.deviceId}">${d.label || 'Cam '+(i+1)}</option>`).join('');
