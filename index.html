@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PokeMaster Elite v12.0 - NO KEYS EDITION</title>
+    <title>PokeMaster Elite v11.0 - NO KEYS EDITION</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --neon: #00f2ff; --red: #ff1f1f; --bg: #0d0d0d; --panel: #1a1a1e; --text: #e0e0e0; }
@@ -23,13 +23,10 @@
 
         #vision-container { position: relative; width: 100%; aspect-ratio: 3/4; background: #000; border-bottom: 1px solid #333; display: block; overflow: hidden; }
         video { width: 100%; height: 100%; object-fit: cover; }
-        
-        /* EL FANTASMA */
         #ghost-overlay { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 80%; opacity: 0.5; pointer-events: none; display: none;
             border: 2px solid var(--neon); border-radius: 12px; box-shadow: 0 0 20px var(--neon);
-            z-index: 10;
         }
 
         .cam-bar { background: #111; padding: 10px; display: flex; align-items: center; gap: 10px; font-size: 0.8rem; }
@@ -82,7 +79,7 @@
 <div class="content">
     <div id="tab-val" class="panel active-panel">
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Nombre o Escanea ->">
+            <input type="text" id="searchInput" placeholder="Nombre (ej: Venonat #1)">
             <button class="btn btn-ai" onclick="aiScan()"><i class="fas fa-robot"></i> AI</button>
             <button class="btn" onclick="masterSearch('val')"><i class="fas fa-search"></i></button>
         </div>
@@ -91,8 +88,8 @@
 
     <div id="tab-vf" class="panel">
         <div class="search-box">
-            <input type="text" id="vfInput" placeholder="Ej: Venonat 1">
-            <button class="btn" onclick="directLoadImage()">CARGAR SIN KEYS</button>
+            <input type="text" id="vfInput" placeholder="Venonat #1...">
+            <button class="btn" onclick="masterSearch('vf')">BUSCAR Y CARGAR</button>
         </div>
         <div style="display:flex; gap:10px; margin-bottom:15px">
             <button class="btn" style="flex:1" onclick="toggleGhost('front')">FRENTE</button>
@@ -123,37 +120,6 @@
     let vfGhostImg = "";
     const BACK_IMAGE = "https://images.pokemontcg.io/swsh1/back.png";
 
-    // --- CARGA DIRECTA (TU SUPER IDEA) ---
-    function directLoadImage() {
-        const val = document.getElementById('vfInput').value;
-        if(!val) return alert("Escribe algo primero");
-        
-        // Usamos un servicio de búsqueda de imágenes directo o la CDN de Pokémon TCG sin Key
-        // Esta URL busca la carta por nombre directamente en la base de datos de imágenes
-        const formattedName = val.toLowerCase().replace(/ /g, "-");
-        
-        // Intentamos cargar desde la CDN pública que no requiere Key para imágenes
-        // Si no tienes el set, la "IA" de la URL intentará adivinar
-        vfGhostImg = `https://images.pokemontcg.io/base1/1.png`; // Fallback base
-        
-        // Mostramos un mensaje de "Buscando..."
-        alert("Buscando imagen para: " + val);
-        
-        // Tu idea: Buscar en Google / DuckDuckGo de forma indirecta
-        // Como no podemos hacer scraping directo, usamos el buscador de la API pero sin usar la KEY en la cabecera
-        fetch(`https://api.pokemontcg.io/v2/cards?q=name:"${val}"&pageSize=1`)
-            .then(res => res.json())
-            .then(json => {
-                if(json.data && json.data.length > 0) {
-                    vfGhostImg = json.data[0].images.large;
-                    document.getElementById('ghost-overlay').src = vfGhostImg;
-                    document.getElementById('ghost-overlay').style.display = 'block';
-                } else {
-                    alert("No encontré esa carta exacta, intenta: Nombre + Número");
-                }
-            });
-    }
-
     // --- CÁMARA ---
     async function listCameras() {
         try {
@@ -173,7 +139,7 @@
                 video: { deviceId: id ? {exact: id} : undefined, facingMode: "environment" } 
             });
             document.getElementById('video').srcObject = activeStream;
-        } catch (e) { console.warn("Cámara no disponible."); }
+        } catch (e) { console.warn("Cámara bloqueada o no disponible."); }
     }
 
     function stopCamera() {
@@ -181,6 +147,14 @@
             activeStream.getTracks().forEach(track => track.stop());
             activeStream = null;
         }
+    }
+
+    // --- ESCÁNER ---
+    async function aiScan() {
+        const video = document.getElementById('video');
+        const resultsDiv = document.getElementById('results-val');
+        resultsDiv.innerHTML = "<p style='color:var(--neon)'>Simulando escaneo... (Escribe el nombre para buscar)</p>";
+        masterSearch('val');
     }
 
     // --- NAVEGACIÓN ---
@@ -199,40 +173,80 @@
             document.getElementById('cam-controls').style.display = 'none';
             stopCamera();
         }
+        if(tabId === 'dex') renderDex();
     }
 
-    // --- BÚSQUEDA DE VALOR (SIN KEY OBLIGATORIA) ---
+    // --- BÚSQUEDA MAESTRA (SIN KEYS) ---
     async function masterSearch(type) {
-        const q = document.getElementById('searchInput').value;
+        const inputId = type === 'val' ? 'searchInput' : 'vfInput';
+        let q = document.getElementById(inputId).value;
         if(!q) return;
 
-        document.getElementById('results-val').innerHTML = "Buscando precio...";
+        // Limpiar búsqueda para la API: si tiene #, lo quitamos para buscar mejor
+        let cleanQ = q.replace('#', '');
 
-        // La API de Pokémon funciona sin Key (con límite de 1000/día), eliminamos la variable SCRYDEX_API_KEY
+        if(type === 'val') document.getElementById('results-val').innerHTML = "Buscando datos...";
+
         try {
-            const response = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:"${q}"*&pageSize=5`);
+            // Usamos la API pública de pokemontcg.io (no requiere Key para peticiones básicas)
+            const url = `https://api.pokemontcg.io/v2/cards?q=name:"${encodeURIComponent(cleanQ.trim())}"&pageSize=5`;
+            const response = await fetch(url);
             const json = await response.json();
             
-            if(json.data) {
-                document.getElementById('results-val').innerHTML = json.data.map(c => {
-                    const p = c.tcgplayer?.prices?.holofoil?.market || c.tcgplayer?.prices?.normal?.market || "N/A";
-                    return `
-                    <div class="res-card">
-                        <img src="${c.images.small}" width="60">
-                        <div style="flex:1">
-                            <b style="color:var(--neon)">${c.name}</b><br>
-                            <span class="price">$${p} USD</span>
-                        </div>
-                    </div>`;
-                }).join('');
+            if(json.data && json.data.length > 0) {
+                processResults(json.data, type);
+            } else {
+                alert("No se encontró la carta.");
             }
-        } catch (e) { alert("Error al conectar"); }
+        } catch (e) {
+            console.error(e);
+            alert("Error de red. Intenta de nuevo.");
+        }
+    }
+
+    function processResults(data, type) {
+        if(type === 'val') {
+            document.getElementById('results-val').innerHTML = data.map(c => {
+                const p = c.tcgplayer?.prices?.holofoil?.market || c.tcgplayer?.prices?.normal?.market || "N/A";
+                return `
+                <div class="res-card">
+                    <img src="${c.images.small}" width="60">
+                    <div style="flex:1">
+                        <b style="color:var(--neon)">${c.name}</b><br>
+                        <small>${c.set.name} - ${c.number}</small><br>
+                        <span class="price">$${p} USD</span>
+                    </div>
+                    <button class="btn" onclick="saveToDex('${c.name}', '${c.images.small}')">+</button>
+                </div>`;
+            }).join('');
+        } else {
+            // Tu idea: Carga la imagen grande directamente para el fantasma
+            vfGhostImg = data[0].images.large;
+            const overlay = document.getElementById('ghost-overlay');
+            overlay.src = vfGhostImg;
+            overlay.style.display = 'block';
+            alert("Cargada: " + data[0].name + " (" + data[0].set.name + ")");
+        }
     }
 
     function toggleGhost(mode) {
         const g = document.getElementById('ghost-overlay');
+        if(!vfGhostImg && mode === 'front') return alert("Busca una carta primero.");
         g.src = (mode === 'front') ? vfGhostImg : BACK_IMAGE;
         g.style.display = 'block';
+    }
+
+    function saveToDex(name, img) {
+        let dex = JSON.parse(localStorage.getItem('pokedex_v10') || '[]');
+        dex.push({ name, img });
+        localStorage.setItem('pokedex_v10', JSON.stringify(dex));
+        alert("¡Guardada!");
+    }
+
+    function renderDex() {
+        const dex = JSON.parse(localStorage.getItem('pokedex_v10') || '[]');
+        const container = document.getElementById('dex-list');
+        container.innerHTML = dex.length ? dex.map(c => `<div class="dex-item"><img src="${c.img}"><p>${c.name}</p></div>`).join('') : "Dex Vacío";
     }
 
     function toggleDeck(id) {
