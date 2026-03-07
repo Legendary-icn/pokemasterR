@@ -462,46 +462,65 @@ async function searchRealPrice() {
     if(!input) return;
     
     const resDiv = document.getElementById('price-res');
-    resDiv.innerHTML = "<div style='color:var(--neon)'><i class='fas fa-sync fa-spin'></i> Buscando coincidencias en TCGPlayer...</div>";
+    resDiv.innerHTML = `<div style='color:var(--neon)'>
+        <i class='fas fa-search fa-spin'></i> Localizando en el mercado...</div>`;
     
     try {
-        let query = "";
-        if(input.includes('#')) {
-            let [name, number] = input.split('#');
-            query = `name:"${name.trim()}" number:${number.trim()}`;
-        } else {
-            query = `name:"${input}"`;
+        // Limpiamos el input para que la búsqueda sea más amplia (fuzzy search)
+        let searchTerm = input.replace('#', ' ');
+        
+        // Usamos una búsqueda más "suave": solo nombre y que nos traiga las primeras 10 coincidencias
+        // Esto evita que si el número está mal escrito, la API de error total.
+        const response = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:"${searchTerm}*"&pageSize=10&orderBy=-set.releaseDate`);
+        const data = await response.json();
+        
+        if(!data.data || data.data.length === 0) {
+            // Si la API falla, creamos un botón de emergencia para buscar en Google/TCGPlayer directamente
+            resDiv.innerHTML = `
+                <div style="text-align:center; padding:10px;">
+                    <p style='color:var(--red)'>No hay datos exactos en el servidor.</p>
+                    <button class="btn" onclick="window.open('https://www.tcgplayer.com/search/pokemon/product?q=${encodeURIComponent(input)}')">
+                        BUSCAR DIRECTO EN TCGPLAYER
+                    </button>
+                </div>`;
+            return;
         }
 
-        const req = await fetch(`https://api.pokemontcg.io/v2/cards?q=${query}&orderBy=-set.releaseDate`);
-        const data = await req.json();
-        
-        if(!data.data || data.data.length === 0) throw new Error();
-
-        resDiv.innerHTML = `<div style="display:flex; flex-direction:column; gap:15px"></div>`;
+        resDiv.innerHTML = `<div style="display:flex; flex-direction:column; gap:12px"></div>`;
         const container = resDiv.firstChild;
 
         data.data.forEach(card => {
-            const marketPrice = card.tcgplayer?.prices?.holofoil?.market || card.tcgplayer?.prices?.normal?.market || card.tcgplayer?.prices?.reverseHolofoil?.market || 0;
-            const psa10Est = marketPrice > 0 ? (marketPrice * 12.5).toFixed(2) : "N/A";
+            // Extraemos el precio de mercado o el precio promedio
+            const prices = card.tcgplayer?.prices;
+            const marketPrice = prices?.holofoil?.market || prices?.normal?.market || prices?.reverseHolofoil?.market || "---";
+            
+            // Si no hay precio, calculamos un estimado basado en rareza (opcional)
+            const psa10Est = (marketPrice !== "---") ? (parseFloat(marketPrice) * 10).toFixed(2) : "N/A";
+
+            // Creamos un enlace de búsqueda de TCGPlayer real por si el link de la API está roto
+            const fallbackLink = `https://www.tcgplayer.com/search/pokemon/product?q=${encodeURIComponent(card.name + " " + card.number)}`;
 
             container.innerHTML += `
-                <div style="background:var(--panel); padding:12px; border-radius:10px; border:1px solid #333; display:flex; align-items:center; gap:10px">
-                    <img src="${card.images.small}" style="width:70px; border-radius:4px">
+                <div style="background:var(--panel); padding:12px; border-radius:12px; border:1px solid #333; display:flex; align-items:center; gap:10px; animation: fadeIn 0.3s">
+                    <img src="${card.images.small}" style="width:65px; border-radius:4px; box-shadow: 0 4px 8px rgba(0,0,0,0.5)">
                     <div style="flex:1">
-                        <b style="color:var(--neon); font-size:0.9rem">${card.name}</b><br>
-                        <small style="color:#aaa">${card.set.name} (${card.number}/${card.set.printedTotal})</small><br>
-                        <div style="margin-top:5px">
-                            <span style="color:var(--green); font-weight:bold">$${marketPrice} USD</span>
-                            <span style="color:var(--gold); font-size:0.7rem; margin-left:10px">PSA 10 Est: $${psa10Est}</span>
+                        <b style="color:white; font-size:0.85rem">${card.name}</b><br>
+                        <small style="color:var(--neon)">${card.set.name}</small><br>
+                        <div style="margin-top:5px; display:flex; align-items:baseline; gap:10px">
+                            <span style="color:var(--green); font-weight:bold; font-size:1rem">$${marketPrice}</span>
+                            <span style="color:var(--gold); font-size:0.65rem">PSA 10 Est: $${psa10Est}</span>
                         </div>
                     </div>
-                    <a href="${card.tcgplayer?.url || '#'}" target="_blank" style="color:var(--neon)"><i class="fas fa-external-link-alt"></i></a>
+                    <a href="${card.tcgplayer?.url || fallbackLink}" target="_blank" 
+                       style="background:rgba(0,242,255,0.1); padding:10px; border-radius:50%; color:var(--neon)">
+                       <i class="fas fa-shopping-cart"></i>
+                    </a>
                 </div>
             `;
         });
     } catch(e) {
-        resDiv.innerHTML = `<b style='color:var(--red)'>No se encontraron resultados. Usa: Nombre #Número</b>`;
+        console.error(e);
+        resDiv.innerHTML = `<b style='color:var(--red)'>Error de conexión. Intenta buscar solo el nombre.</b>`;
     }
 }
     // --- UTILIDADES GLOBALES ---
@@ -558,6 +577,7 @@ async function searchRealPrice() {
 </script>
 </body>
 </html>
+
 
 
 
