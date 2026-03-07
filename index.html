@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PokeMaster Elite v20.0 - STADIUM</title>
+    <title>PokeMaster Elite v21.0 - UNLIMITED</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --neon: #00f2ff; --red: #ff1f1f; --bg: #0a0a0c; --panel: #16161a; --text: #e0e0e0; --gold: #ffd700; --green: #00ff88; }
@@ -52,46 +52,21 @@
         .pack-img { width: 120px; filter: drop-shadow(0 0 10px rgba(0,242,255,0.3)); margin-bottom: 10px; max-height: 80px; object-fit: contain; }
         select { background: #222; color: white; border: 1px solid var(--neon); padding: 10px; border-radius: 5px; width: 100%; margin-bottom: 15px; font-family: inherit; }
 
-        /* CARTAS ABIERTAS */
-        .pull-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 20px; }
-        .card-pull { animation: cardReveal 0.6s ease-out; width: 100%; border-radius: 10px; }
-
         /* BOTONES */
         .btn { background: var(--neon); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px; font-size: 0.8rem; text-transform: uppercase;}
         .btn:disabled { background: #333; color: #666; }
-        .btn-red { background: var(--red); color: white; }
 
-        @keyframes cardReveal { from { transform: scale(0) rotateY(180deg); opacity: 0; } to { transform: scale(1) rotateY(0); opacity: 1; } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; transform: translateY(5px); } 100% { opacity: 0.5; } }
-
-        /* DECK BUILDER */
+        /* DEX GRID */
+        .pull-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
         .card-item { position: relative; cursor: pointer; }
         .card-item img { width: 100%; border-radius: 5px; border: 2px solid transparent; transition: 0.2s; }
         .card-item.selected img { border-color: var(--gold); box-shadow: 0 0 10px var(--gold); }
-        .badge { position: absolute; top: -5px; right: -5px; background: var(--red); color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 11px; display: flex; align-items: center; justify-content: center; z-index: 5; font-weight: bold; border: 1px solid white; }
-
-        /* ESTADIO PROFESIONAL */
-        .stadium-container { height: 400px; display: flex; flex-direction: column; background: #071a0e; border: 2px solid #1a3a25; border-radius: 10px; position: relative; overflow: hidden; margin-top: 10px; }
-        .field-side { flex: 1; display: grid; grid-template-rows: 1fr 1.5fr; gap: 5px; padding: 5px; }
-        .bench { display: flex; justify-content: center; gap: 5px; height: 60px; }
-        .active-spot { display: flex; justify-content: center; align-items: center; position: relative; }
-        .slot { width: 50px; height: 70px; border: 1px dashed rgba(255,255,255,0.2); border-radius: 4px; background: rgba(0,0,0,0.3); position: relative; overflow: visible; }
-        .slot img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
-        .energy-stack { position: absolute; top: 0; left: -10px; display: flex; flex-direction: column; z-index: 10; }
-        .en-dot { width: 15px; height: 15px; border-radius: 50%; border: 1px solid #fff; margin-bottom: -5px; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-
-        /* UI DE JUEGO (MANO Y ENERGÍAS) */
-        .game-ui { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.95); z-index: 3000; border-top: 2px solid var(--neon); }
-        .hand-scroll { display: flex; gap: 10px; padding: 10px; overflow-x: auto; height: 110px; align-items: center; }
-        .hand-card { min-width: 75px; height: 105px; border-radius: 5px; transition: 0.2s; border: 1px solid #555; }
-        .energy-bar { display: flex; background: #111; padding: 8px; justify-content: space-around; border-bottom: 1px solid #333; }
-        .en-btn { width: 35px; height: 35px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; font-weight: bold; color: white; text-shadow: 1px 1px #000; }
+        .badge { position: absolute; top: -5px; right: -5px; background: var(--red); color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; display: flex; align-items: center; justify-content: center; z-index: 5; border: 1px solid white; }
 
         /* OVERLAYS */
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .ingame-lock .top-nav { pointer-events: none; opacity: 0.3; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -101,38 +76,29 @@
     <button onclick="showTab('packs', this)"><i class="fas fa-box-open"></i> Sobres</button>
     <button onclick="showTab('dex', this)"><i class="fas fa-box-archive"></i> Mi Dex</button>
     <button onclick="showTab('decks', this)"><i class="fas fa-layer-group"></i> Mazos</button>
-    <button onclick="showTab('tcg', this)"><i class="fas fa-bolt"></i> TCG Play</button>
     <button onclick="showTab('val', this)"><i class="fas fa-search-dollar"></i> Precios</button>
 </nav>
 
 <div id="pack-opening-overlay" class="overlay">
-    <div id="pack-tear-area" style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; touch-action: none; cursor: pointer;">
-        <img id="current-pack-img-overlay" src="" style="width: 200px; max-height: 300px; object-fit: contain; filter: drop-shadow(0 0 20px rgba(0,242,255,0.4)); transition: transform 0.2s;">
-        <div style="color: var(--neon); margin-top: 30px; font-weight: bold; font-size: 1.2rem; animation: pulse 1.5s infinite;">
-            <i class="fas fa-arrow-down"></i> DESLIZA PARA RASGAR <i class="fas fa-arrow-down"></i>
+    <div id="pack-tear-area" style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; touch-action: none;">
+        <img id="current-pack-img-overlay" src="" style="width: 200px; transition: transform 0.4s ease-in, opacity 0.3s;">
+        <div style="color: var(--neon); margin-top: 30px; font-weight: bold; animation: fadeIn 1s infinite alternate;">
+            <i class="fas fa-fingerprint"></i> DESLIZA ABAJO PARA ABRIR
         </div>
     </div>
     <div id="card-reveal-area" style="display: none; width: 100%; height: 100%; flex-direction: column; justify-content: center; align-items: center;">
-        <img id="revealed-card" src="" style="width: 250px; border-radius: 12px; box-shadow: 0 0 30px rgba(255,215,0,0.3); transition: transform 0.3s; cursor: pointer;">
-        <div style="color: white; margin-top: 20px; font-size: 1rem;">Toca la carta para ver la siguiente</div>
-        <div id="pull-counter" style="color: var(--neon); margin-top: 10px; font-weight: bold;">Carta 1 de 6</div>
+        <img id="revealed-card" src="" style="width: 260px; border-radius: 12px; transition: transform 0.5s; cursor: pointer; filter: drop-shadow(0 0 20px var(--gold));">
+        <div id="pull-counter" style="color: white; margin-top: 20px; font-weight: bold;">Carta 1 de 6</div>
     </div>
     <div id="pack-loading" style="display: none; color: white;">
-        <div style="width: 40px; height: 40px; border: 4px solid #333; border-top-color: var(--neon); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
-        Preparando cartas...
+        <div style="width: 40px; height: 40px; border: 4px solid #333; border-top-color: var(--neon); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px;"></div>
+        Buscando cartas únicas...
     </div>
-</div>
-
-<div id="matchmaking-ui" class="overlay">
-    <div style="width: 50px; height: 50px; border: 5px solid #333; border-top-color: var(--neon); border-radius: 50%; animation: spin 1s linear infinite;"></div>
-    <h2 id="mm-status" style="color:var(--neon); margin-top: 20px;">BUSCANDO OPONENTE REAL...</h2>
-    <p id="mm-sub">Conectando con Servidor Regional</p>
-    <button class="btn btn-red" style="width:200px" onclick="stopMM()">CANCELAR</button>
 </div>
 
 <div id="vision-container">
     <video id="video" autoplay playsinline></video>
-    <canvas id="freeze-canvas"></canvas>
+    <canvas id="freeze-canvas" style="display:none"></canvas>
     <img id="ghost-overlay" src="">
     <div id="ai-scanner-ui">
         <b id="ai-title" style="color:var(--neon)">AI DEEP SCANNING...</b>
@@ -142,82 +108,42 @@
 
 <div class="content">
     <div id="tab-vf" class="panel active-panel">
-        <div style="background:var(--panel); padding:10px; border-radius:8px; margin-bottom:10px; font-size:0.75rem">
-            <i class="fas fa-info-circle" style="color:var(--neon)"></i> 
-            Para añadir a tu Dex, debes validar <b>Frente</b> y <b>Reverso</b>.
-        </div>
         <input type="text" id="vfInput" placeholder="set/numero (ej: sv3pt5/151)" style="width:calc(100% - 26px); padding:12px; background:#222; border:1px solid #444; color:white; border-radius:8px; margin-bottom:10px">
         <div style="display:flex; gap:10px; margin-bottom:10px">
             <button class="btn" style="flex:1" onclick="prepScan('front')">FRONTAL</button>
             <button class="btn" style="flex:1; background:#333; color:white" onclick="prepScan('back')">REVERSO</button>
         </div>
-        <button id="btn-scan-ia" class="btn btn-red" onclick="executeAIScan()" style="display:none; padding:15px">ESCANEAR AHORA</button>
+        <button id="btn-scan-ia" class="btn" style="display:none; background:var(--red); color:white" onclick="executeAIScan()">ESCANEAR AHORA</button>
         <button id="btn-add-dex" class="btn" onclick="addToDexFinal()" style="display:none; background:var(--green)">¡AÑADIR A MI DEX!</button>
-        <button id="btn-retry-vf" class="btn" onclick="resetVF()" style="display:none; background:#444; color:white">REINTENTAR</button>
     </div>
 
     <div id="tab-packs" class="panel">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
-            <span>Sobres hoy: <b id="daily-count">10</b></span>
-        </div>
         <div class="pack-display">
+            <small style="color:var(--green); margin-bottom:10px">MODO: SOBRES INFINITOS ACTIVADO</small>
             <select id="set-selector" onchange="updatePackLogo()"></select>
             <img src="" id="shop-pack-logo" class="pack-img">
-            <button class="btn" id="btn-open-pack" onclick="startPackOpening()">ABRIR SOBRE</button>
+            <button class="btn" onclick="startPackOpening()">ABRIR SOBRE GRATIS</button>
         </div>
-        <div id="pack-results" class="pull-grid"></div>
     </div>
 
     <div id="tab-dex" class="panel">
-        <div style="display:flex; gap:10px; margin-bottom:15px">
-            <div style="background:var(--panel); padding:10px; flex:1; border-radius:8px; text-align:center">
-                <small>CARTAS</small><br><b id="dex-count" style="color:var(--neon)">0</b>
-            </div>
+        <div style="text-align:center; margin-bottom:15px; background:var(--panel); padding:10px; border-radius:8px">
+            Colección: <b id="dex-count" style="color:var(--neon)">0</b> cartas únicas
         </div>
-        <div id="dex-grid" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:5px"></div>
+        <div id="dex-grid" class="pull-grid"></div>
     </div>
 
     <div id="tab-decks" class="panel">
         <div style="background:var(--panel); padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid var(--neon); display:flex; justify-content:space-between; align-items:center;">
-            <span>Cartas en Mazo: <b id="deck-builder-count">0</b>/60</span>
-            <button class="btn btn-red" style="width:auto; margin:0; padding:5px 10px" onclick="clearDeck()">VACIAR</button>
+            <span>Mazo: <b id="deck-builder-count">0</b>/60</span>
+            <button class="btn" style="width:auto; margin:0; padding:5px 10px; background:var(--red); color:white" onclick="clearDeck()">VACIAR</button>
         </div>
-        <div style="font-size: 0.75rem; margin-bottom: 10px; color: #aaa;">Toca una carta para añadirla o quitarla (Máx 4 copias).</div>
         <div id="inventory-render" class="pull-grid" style="grid-template-columns: repeat(3, 1fr);"></div>
     </div>
 
-    <div id="tab-tcg" class="panel">
-        <div id="lobby-ui">
-            <div style="display:flex; gap:5px; margin-bottom:10px">
-                <button class="btn" onclick="findMatch('casual')">MODO AMISTOSO</button>
-                <button class="btn" style="background:var(--gold); color:black" onclick="findMatch('competi')">COMPETITIVO</button>
-            </div>
-            <div class="battle-log" id="battle-log">Elige un modo para buscar oponente...</div>
-        </div>
-
-        <div id="battle-screen" style="display:none;">
-            <div class="stadium-container">
-                <div class="field-side" style="transform: rotate(180deg); border-bottom:1px solid #1a3a25">
-                    <div class="bench" id="r-bench"><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div></div>
-                    <div class="active-spot"><div class="slot" id="r-active" style="width:60px; height:85px"></div></div>
-                </div>
-                <div class="field-side">
-                    <div class="active-spot"><div class="slot" id="p-active" onclick="playInSlot('active')" style="width:60px; height:85px; border:2px solid var(--gold)"></div></div>
-                    <div class="bench" id="p-bench"><div class="slot" onclick="playInSlot('b0')"></div><div class="slot" onclick="playInSlot('b1')"></div><div class="slot" onclick="playInSlot('b2')"></div><div class="slot" onclick="playInSlot('b3')"></div><div class="slot" onclick="playInSlot('b4')"></div></div>
-                </div>
-            </div>
-            <div class="game-ui" id="game-ui-controls" style="display:none;">
-                <div class="energy-bar">
-                    <button class="btn" style="width:auto; margin:0; padding:5px 10px; background:var(--red); color:white" onclick="exitBattle()">RENDIRSE</button>
-                </div>
-                <div class="hand-scroll" id="p-hand"></div>
-            </div>
-        </div>
-    </div>
-
     <div id="tab-val" class="panel">
-        <input type="text" id="priceInput" placeholder="Nombre de carta o ID (ej: Charizard o swsh1-1)" style="width:calc(100% - 26px); padding:12px; background:#222; border:1px solid #444; color:white; border-radius:8px">
-        <button class="btn" onclick="searchRealPrice()">CONSULTAR TCGPLAYER</button>
+        <input type="text" id="priceInput" placeholder="Nombre (ej: Charizard) o ID (ej: sv3pt5-151)" style="width:calc(100% - 26px); padding:12px; background:#222; border:1px solid #444; color:white; border-radius:8px; margin-bottom:10px">
+        <button class="btn" onclick="searchRealPrice()">BUSCAR EN INTERNET</button>
         <div id="price-res" style="margin-top:20px"></div>
     </div>
 </div>
@@ -225,55 +151,26 @@
 <script>
     let state = {
         dex: JSON.parse(localStorage.getItem('pm_dex') || '[]'),
-        packCards: JSON.parse(localStorage.getItem('pm_packs') || '[]'),
-        dailyPacks: parseInt(localStorage.getItem('pm_daily') || '10'),
         deck: JSON.parse(localStorage.getItem('pm_deck') || '[]'),
         scanLock: { front: false, back: false, id: '' },
-        inMatch: false,
-        hand: [], selectedHandIndex: null,
         activePulls: [], currentPullIndex: 0
     };
 
-    // --- CÁMARA & V/F ---
-    async function initCamera(deviceId = null) {
+    // --- CÁMARA ---
+    async function initCamera() {
         try {
-            const constraints = {
-                video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: "environment" }
-            };
-            const stream = await navigator.mediaDevices.getUserMedia(constraints);
-            const video = document.getElementById('video');
-            video.srcObject = stream;
-
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const videoDevices = devices.filter(device => device.kind === 'videoinput');
-            
-            let camSelector = document.getElementById('cam-selector');
-            if(!camSelector) {
-                camSelector = document.createElement('select');
-                camSelector.id = 'cam-selector';
-                camSelector.style = "width:100%; margin-top:10px; background:#222; color:white; border:1px solid var(--neon); padding:5px; border-radius:5px;";
-                camSelector.onchange = (e) => initCamera(e.target.value);
-                document.getElementById('tab-vf').prepend(camSelector);
-            }
-            
-            camSelector.innerHTML = videoDevices.map(device => 
-                `<option value="${device.deviceId}" ${device.deviceId === deviceId ? 'selected' : ''}>${device.label || 'Cámara ' + (videoDevices.indexOf(device)+1)}</option>`
-            ).join('');
-
-        } catch (e) { 
-            console.error("Error al acceder a la cámara:", e);
-        }
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            document.getElementById('video').srcObject = stream;
+        } catch (e) { console.error("Cámara no disponible"); }
     }
 
+    // --- V/F CHECK ---
     async function prepScan(mode) {
         const id = document.getElementById('vfInput').value.trim().replace('/', '-');
-        if(!id) return alert("Escribe el ID primero (ej: sv3pt5-151)");
-        
+        if(!id) return alert("Escribe el ID (ej: sv3pt5-151)");
         state.scanLock.id = id;
         const ghost = document.getElementById('ghost-overlay');
-        
         ghost.style.display = 'block';
-        
         try {
             const res = await fetch(`https://api.pokemontcg.io/v2/cards/${id}`);
             const data = await res.json();
@@ -281,321 +178,194 @@
                 ghost.src = data.data.images.small;
                 document.getElementById('btn-scan-ia').style.display = 'block';
                 document.getElementById('btn-scan-ia').dataset.mode = mode;
-            } else {
-                alert("No se encontró la carta con ese ID.");
-                ghost.style.display = 'none';
             }
-        } catch (e) {
-            alert("Error al obtener referencia de la carta.");
-        }
+        } catch (e) { alert("Error de conexión"); }
     }
 
     function executeAIScan() {
-        const mode = document.getElementById('btn-scan-ia').dataset.mode;
         const btn = document.getElementById('btn-scan-ia');
-        
-        btn.disabled = true;
-        btn.innerText = "PROCESANDO PIXELES...";
-        document.getElementById('video').style.display = 'none';
-        
+        btn.disabled = true; btn.innerText = "ANALIZANDO...";
         document.getElementById('ai-scanner-ui').style.display = 'block';
-        document.getElementById('ai-checks').innerHTML = "<div>Iniciando análisis de textura...</div>";
-        
+        document.getElementById('ai-checks').innerHTML = "<div>Verificando autenticidad...</div>";
         setTimeout(() => {
-            document.getElementById('ai-checks').innerHTML += "<div style='color:var(--neon)'>✓ Patrón holográfico detectado</div>";
-            setTimeout(() => {
-                document.getElementById('ai-checks').innerHTML += "<div style='color:var(--neon)'>✓ Micro-texto verificado</div>";
-                setTimeout(() => {
-                    finalizeScan(true, mode);
-                    btn.disabled = false;
-                    btn.innerText = "ESCANEAR AHORA";
-                }, 800);
-            }, 800);
-        }, 800);
-    }
-
-    function finalizeScan(isReal, mode) {
-        state.scanLock[mode] = true;
-        document.getElementById('ai-title').innerHTML = "VALIDACIÓN EXITOSA";
-        if(state.scanLock.front && state.scanLock.back) {
-            document.getElementById('btn-add-dex').style.display = 'block';
-            document.getElementById('btn-scan-ia').style.display = 'none';
-        }
+            state.scanLock[btn.dataset.mode] = true;
+            document.getElementById('ai-title').innerText = "✓ VALIDADO";
+            if(state.scanLock.front && state.scanLock.back) document.getElementById('btn-add-dex').style.display = 'block';
+            btn.disabled = false; btn.innerText = "ESCANEAR AHORA";
+        }, 1500);
     }
 
     function addToDexFinal() {
-        state.dex.push({ id: state.scanLock.id, img: `https://images.pokemontcg.io/${state.scanLock.id.replace('/','-')}_hires.png`, source: 'scan' });
-        saveData(); 
-        alert("¡Añadida a tu Dex!"); 
-        resetVF(); 
-        showTab('dex', document.querySelector('[onclick*="dex"]'));
+        if(!state.dex.find(c => c.id === state.scanLock.id)) {
+            state.dex.push({ id: state.scanLock.id, img: `https://images.pokemontcg.io/${state.scanLock.id}_hires.png` });
+            saveData();
+        }
+        alert("¡Guardada!"); resetVF();
     }
 
     function resetVF() {
-        document.getElementById('video').style.display = 'block';
         document.getElementById('ai-scanner-ui').style.display = 'none';
         document.getElementById('btn-add-dex').style.display = 'none';
-        document.getElementById('btn-scan-ia').style.display = 'none';
         document.getElementById('ghost-overlay').style.display = 'none';
         state.scanLock = { front: false, back: false, id: '' };
     }
 
-    // --- CARGA DINÁMICA DE SETS Y SOBRES ---
-    async function loadAllSets() {
+    // --- SOBRES INFINITOS SIN REPETIDAS ---
+    async function startPackOpening() {
+        const setId = document.getElementById('set-selector').value;
+        const overlay = document.getElementById('pack-opening-overlay');
+        document.getElementById('pack-tear-area').style.display = 'flex';
+        document.getElementById('card-reveal-area').style.display = 'none';
+        document.getElementById('pack-loading').style.display = 'block';
+        overlay.style.display = 'flex';
+
         try {
-            const res = await fetch('https://api.pokemontcg.io/v2/sets?orderBy=-releaseDate');
+            const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=set.id:${setId}&pageSize=250`);
             const data = await res.json();
-            const selector = document.getElementById('set-selector');
-            selector.innerHTML = data.data.map(set => 
-                `<option value="${set.id}" data-logo="${set.images.logo}">${set.name}</option>`
-            ).join('');
-            updatePackLogo();
-        } catch(e) { console.error("Error cargando expansiones"); }
+            
+            // Filtro para NO REPETIDAS: Solo cartas que NO estén en la Dex
+            let pool = data.data.filter(card => !state.dex.find(d => d.id === card.id));
+            
+            // Si ya tienes todas, permite repetidas para no romper el juego
+            if(pool.length < 6) pool = data.data;
+
+            const shuffled = pool.sort(() => 0.5 - Math.random());
+            state.activePulls = shuffled.slice(0, 6).map(c => ({ id: c.id, img: c.images.large }));
+            
+            document.getElementById('pack-loading').style.display = 'none';
+            setupGestures();
+        } catch (e) { overlay.style.display = 'none'; alert("Error al cargar cartas"); }
     }
 
-    function updatePackLogo() {
-        const selector = document.getElementById('set-selector');
-        const logoUrl = selector.options[selector.selectedIndex].dataset.logo;
-        document.getElementById('shop-pack-logo').src = logoUrl;
-    }
-
-    // --- APERTURA DE SOBRES & GESTOS TÁCTILES ---
-async function startPackOpening() {
-    if(state.dailyPacks <= 0) {
-        alert("¡No te quedan sobres hoy!");
-        return;
-    }
-
-    const setId = document.getElementById('set-selector').value;
-    const overlay = document.getElementById('pack-opening-overlay');
-    const loadingText = document.getElementById('pack-loading');
-    
-    // Resetear UI del overlay
-    document.getElementById('pack-tear-area').style.display = 'flex';
-    document.getElementById('card-reveal-area').style.display = 'none';
-    loadingText.style.display = 'block';
-    overlay.style.display = 'flex';
-
-    state.activePulls = [];
-
-    try {
-        // Buscamos las cartas reales de ese SET en internet
-        const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=set.id:${setId}&pageSize=250`);
-        const data = await res.json();
-        
-        if(!data.data || data.data.length === 0) throw new Error("No hay cartas");
-
-        // Mezclamos y sacamos 6 cartas aleatorias
-        const shuffled = data.data.sort(() => 0.5 - Math.random());
-        const selected = shuffled.slice(0, 6);
-
-        state.activePulls = selected.map(c => ({
-            id: c.id,
-            img: c.images.large, // Usamos la imagen grande para que se vea genial
-            source: 'pack'
-        }));
-
-        loadingText.style.display = 'none';
-        setupTearGestures(); // Activamos el deslizamiento
-        
-    } catch (error) {
-        console.error(error);
-        alert("Error al obtener cartas del servidor.");
-        overlay.style.display = 'none';
-    }
-}
-    function setupTearGestures() {
-        const tearArea = document.getElementById('pack-tear-area');
-        
-        // Habilitar clic para PC
-        tearArea.onclick = executeTear;
-        
-        // Habilitar Swipe hacia abajo para Móviles
+    function setupGestures() {
+        const area = document.getElementById('pack-tear-area');
         let startY = 0;
-        tearArea.ontouchstart = (e) => { startY = e.touches[0].clientY; };
-        tearArea.ontouchmove = (e) => {
-            let currentY = e.touches[0].clientY;
-            if (currentY - startY > 60) { // Si desliza más de 60px hacia abajo
-                executeTear();
+        area.ontouchstart = (e) => startY = e.touches[0].clientY;
+        area.ontouchmove = (e) => {
+            if(e.touches[0].clientY - startY > 50) {
+                area.ontouchmove = null;
+                document.getElementById('current-pack-img-overlay').style.transform = "translateY(600px) rotate(15deg)";
+                setTimeout(() => {
+                    area.style.display = 'none';
+                    state.currentPullIndex = 0;
+                    showNextCard();
+                }, 400);
             }
         };
-    }
-
-    function executeTear() {
-        const tearArea = document.getElementById('pack-tear-area');
-        // Bloqueamos múltiples activaciones
-        tearArea.ontouchmove = null; 
-        tearArea.onclick = null;
-        
-        document.getElementById('current-pack-img-overlay').style.transform = "scale(1.2) translateY(500px)";
-        document.getElementById('current-pack-img-overlay').style.opacity = "0";
-        
-        setTimeout(() => {
-            state.dailyPacks--;
-            document.getElementById('daily-count').innerText = state.dailyPacks;
-            tearArea.style.display = 'none';
-            document.getElementById('current-pack-img-overlay').style.transform = "scale(1) translateY(0)";
-            document.getElementById('current-pack-img-overlay').style.opacity = "1";
-            
-            state.currentPullIndex = 0;
-            showNextCard();
-        }, 300);
+        area.onclick = () => { // Click para PC
+            document.getElementById('current-pack-img-overlay').style.transform = "translateY(600px)";
+            setTimeout(() => { area.style.display = 'none'; state.currentPullIndex = 0; showNextCard(); }, 400);
+        };
     }
 
     function showNextCard() {
         if(state.currentPullIndex >= state.activePulls.length) {
-            state.packCards = state.packCards.concat(state.activePulls);
-            saveData();
-            document.getElementById('pack-opening-overlay').style.display = 'none';
-            alert("¡Cartas añadidas a tu colección!");
-            showTab('dex', document.querySelector('[onclick*="dex"]'));
-            return;
+            saveData(); document.getElementById('pack-opening-overlay').style.display = 'none';
+            return renderDex();
         }
-
-        const revealArea = document.getElementById('card-reveal-area');
-        const cardImg = document.getElementById('revealed-card');
+        const card = state.activePulls[state.currentPullIndex];
+        if(!state.dex.find(d => d.id === card.id)) state.dex.push(card);
         
-        revealArea.style.display = 'flex';
-        cardImg.style.transform = "rotateY(90deg)"; // Inicia volteada
-        
-        setTimeout(() => {
-            cardImg.src = state.activePulls[state.currentPullIndex].img;
-            document.getElementById('pull-counter').innerText = `Carta ${state.currentPullIndex + 1} de 6`;
-            cardImg.style.transform = "rotateY(0deg)"; // Termina de voltear
-        }, 150);
-
-        cardImg.onclick = () => {
-            state.currentPullIndex++;
-            showNextCard();
-        };
+        const img = document.getElementById('revealed-card');
+        img.src = card.img;
+        document.getElementById('card-reveal-area').style.display = 'flex';
+        document.getElementById('pull-counter').innerText = `Carta ${state.currentPullIndex + 1} de 6`;
+        state.currentPullIndex++;
+        img.onclick = () => showNextCard();
     }
 
-    // --- PRECIOS REALES TCGPLAYER (Búsqueda Inteligente) ---
+    // --- BÚSQUEDA DE PRECIOS MEJORADA ---
     async function searchRealPrice() {
-        let input = document.getElementById('priceInput').value.trim();
+        const input = document.getElementById('priceInput').value.trim();
         if(!input) return;
-        
         const resDiv = document.getElementById('price-res');
-        resDiv.innerHTML = `<div style='color:var(--neon); text-align:center;'>
-            <i class='fas fa-search-dollar fa-spin'></i> Escaneando TCGPlayer...</div>`;
-        
+        resDiv.innerHTML = "<div style='color:var(--neon)'>Buscando en TCGPlayer...</div>";
+
         try {
-            let query = "";
-            if (input.includes('#')) {
-                let parts = input.split('#');
-                let name = parts[0].trim();
-                let number = parts[1].trim();
-                query = `name:"${name}" number:${number}`;
-            } else {
-                query = `name:"${input}*"`;
-            }
+            // Intento 1: Búsqueda exacta por ID o Nombre
+            let query = input.includes('-') ? `id:"${input}"` : `name:"${input}*"`;
+            let res = await fetch(`https://api.pokemontcg.io/v2/cards?q=${query}&orderBy=-set.releaseDate&pageSize=10`);
+            let data = await res.json();
 
-            const response = await fetch(`https://api.pokemontcg.io/v2/cards?q=${query}&pageSize=15&orderBy=-set.releaseDate`);
-            const data = await response.json();
-            
+            // Intento 2: Si no hay resultados, buscar solo por nombre (falla de conexión arreglada)
             if(!data.data || data.data.length === 0) {
-                if (input.includes('#')) {
-                    resDiv.innerHTML = "<div style='color:var(--gold)'>Afinando búsqueda solo por nombre...</div>";
-                    document.getElementById('priceInput').value = input.split('#')[0].trim();
-                    return searchRealPrice();
-                }
-                throw new Error("No results");
+                resDiv.innerHTML = "<div style='color:var(--gold)'>Afinando búsqueda...</div>";
+                let simpleName = input.split(/[- #]/)[0];
+                res = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:"${simpleName}*"&pageSize=10`);
+                data = await res.json();
             }
 
-            resDiv.innerHTML = `<div style="display:grid; gap:10px; animation: fadeIn 0.4s"></div>`;
-            const container = resDiv.firstChild;
+            if(data.data.length === 0) throw new Error();
 
-            data.data.forEach(card => {
-                const p = card.tcgplayer?.prices;
-                const price = p?.holofoil?.market || p?.normal?.market || p?.reverseHolofoil?.market || "0.00";
-                const tcgLink = card.tcgplayer?.url || `https://www.tcgplayer.com/search/pokemon/product?q=${encodeURIComponent(card.name)}`;
+            resDiv.innerHTML = data.data.map(c => `
+                <div style="background:var(--panel); padding:10px; border-radius:10px; margin-bottom:8px; display:flex; align-items:center; gap:10px; border:1px solid #333">
+                    <img src="${c.images.small}" style="width:50px">
+                    <div style="flex:1">
+                        <div style="font-weight:bold; font-size:0.8rem">${c.name}</div>
+                        <div style="color:var(--green)">$${c.tcgplayer?.prices?.holofoil?.market || c.tcgplayer?.prices?.normal?.market || '?.??'} USD</div>
+                    </div>
+                    <a href="${c.tcgplayer?.url || '#'}" target="_blank" style="color:var(--neon)"><i class="fas fa-external-link-alt"></i></a>
+                </div>
+            `).join('');
 
-                container.innerHTML += `
-                    <div style="background:var(--panel); padding:10px; border-radius:12px; border:1px solid #333; display:flex; align-items:center; gap:12px">
-                        <img src="${card.images.small}" style="width:60px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); border-radius:4px;">
-                        <div style="flex:1">
-                            <div style="font-size:0.8rem; font-weight:bold; color:white">${card.name}</div>
-                            <div style="font-size:0.65rem; color:#888">${card.set.name} (#${card.number})</div>
-                            <div style="color:var(--green); font-weight:bold; margin-top:3px">$${price} USD</div>
-                        </div>
-                        <a href="${tcgLink}" target="_blank" style="color:var(--neon); font-size:1.2rem; background:rgba(0,242,255,0.1); padding:10px; border-radius:50%;">
-                            <i class="fas fa-shopping-cart"></i>
-                        </a>
-                    </div>`;
-            });
-
-        } catch(e) {
-            resDiv.innerHTML = `
-                <div style="background:rgba(255,31,31,0.1); padding:10px; border-radius:8px; border:1px solid var(--red); color:var(--red); font-size:0.8rem">
-                    <b>Error de búsqueda:</b> No encontramos "${input}".<br>
-                    <small>Prueba solo con el nombre (ej: Bulbasaur)</small>
-                </div>`;
-        }
+        } catch (e) { resDiv.innerHTML = "<div style='color:var(--red)'>No se encontró la carta. Intenta solo el nombre.</div>"; }
     }
 
-    // --- UTILIDADES GLOBALES ---
-    function saveData() {
-        localStorage.setItem('pm_dex', JSON.stringify(state.dex));
-        localStorage.setItem('pm_packs', JSON.stringify(state.packCards));
-        localStorage.setItem('pm_daily', state.dailyPacks.toString());
-        localStorage.setItem('pm_deck', JSON.stringify(state.deck));
-    }
-
-    function renderDex() {
-        const allCards = state.dex.concat(state.packCards);
-        document.getElementById('dex-count').innerText = allCards.length;
-        document.getElementById('dex-grid').innerHTML = allCards.map(c => `<img src="${c.img}" style="width:100%; border-radius:4px; border:1px solid #333">`).join('');
-    }
-
-    function renderDeckBuilder() {
-        const grid = document.getElementById('inventory-render');
-        grid.innerHTML = "";
-        const pool = state.dex.concat(state.packCards);
-        const grouped = pool.reduce((acc, card) => {
-            acc[card.id] = acc[card.id] || { ...card, count: 0 };
-            acc[card.id].count++; return acc;
-        }, {});
-        
-        Object.values(grouped).forEach(card => {
-            const numInDeck = state.deck.filter(c => c.id === card.id).length;
-            const div = document.createElement('div');
-            div.className = `card-item ${numInDeck > 0 ? 'selected' : ''}`;
-            div.innerHTML = `<img src="${card.img}">${numInDeck > 0 ? `<div class="badge">${numInDeck}</div>` : ''}`;
-            div.onclick = () => {
-                if (numInDeck < 4 && state.deck.length < 60) state.deck.push({id: card.id, img: card.img});
-                else if (numInDeck > 0) state.deck.splice(state.deck.findIndex(c => c.id === card.id), 1);
-                saveData(); renderDeckBuilder();
-            };
-            grid.appendChild(div);
-        });
-        document.getElementById('deck-builder-count').innerText = state.deck.length;
-    }
-
-    function clearDeck() { 
-        if(confirm("¿Vaciar mazo?")) { state.deck = []; saveData(); renderDeckBuilder(); } 
-    }
+    // --- SISTEMA ---
+    function saveData() { localStorage.setItem('pm_dex', JSON.stringify(state.dex)); localStorage.setItem('pm_deck', JSON.stringify(state.deck)); }
     
+    function renderDex() {
+        document.getElementById('dex-count').innerText = state.dex.length;
+        document.getElementById('dex-grid').innerHTML = state.dex.map(c => `<div class="card-item"><img src="${c.img}"></div>`).join('');
+    }
+
     function showTab(tabId, btn) {
-        if(state.inMatch) return; 
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active-panel'));
         document.querySelectorAll('.top-nav button').forEach(b => b.classList.remove('active'));
         document.getElementById('tab-' + tabId).classList.add('active-panel');
         btn.classList.add('active');
         document.getElementById('vision-container').style.display = (tabId === 'vf') ? 'block' : 'none';
-        
         if(tabId === 'dex') renderDex();
         if(tabId === 'decks') renderDeckBuilder();
     }
 
-    // --- INICIALIZACIÓN ---
-    window.onload = () => {
-        initCamera();
-        loadAllSets();
-        document.getElementById('daily-count').innerText = state.dailyPacks;
-    };
+    function renderDeckBuilder() {
+        const grid = document.getElementById('inventory-render');
+        grid.innerHTML = state.dex.map(card => {
+            const count = state.deck.filter(c => c.id === card.id).length;
+            return `
+                <div class="card-item ${count > 0 ? 'selected' : ''}" onclick="toggleDeck('${card.id}', '${card.img}')">
+                    <img src="${card.img}">
+                    ${count > 0 ? `<div class="badge">${count}</div>` : ''}
+                </div>`;
+        }).join('');
+        document.getElementById('deck-builder-count').innerText = state.deck.length;
+    }
+
+    function toggleDeck(id, img) {
+        const idx = state.deck.findIndex(c => c.id === id);
+        if(state.deck.length < 60) state.deck.push({id, img});
+        else if(idx > -1) state.deck.splice(idx, 1);
+        saveData(); renderDeckBuilder();
+    }
+
+    function clearDeck() { state.deck = []; saveData(); renderDeckBuilder(); }
+
+    async function loadSets() {
+        const res = await fetch('https://api.pokemontcg.io/v2/sets?orderBy=-releaseDate');
+        const data = await res.json();
+        const sel = document.getElementById('set-selector');
+        sel.innerHTML = data.data.map(s => `<option value="${s.id}" data-logo="${s.images.logo}">${s.name}</option>`).join('');
+        updatePackLogo();
+    }
+
+    function updatePackLogo() {
+        const sel = document.getElementById('set-selector');
+        document.getElementById('shop-pack-logo').src = sel.options[sel.selectedIndex].dataset.logo;
+        document.getElementById('current-pack-img-overlay').src = sel.options[sel.selectedIndex].dataset.logo;
+    }
+
+    window.onload = () => { initCamera(); loadSets(); renderDex(); };
 </script>
 </body>
 </html>
-
-
-
