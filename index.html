@@ -370,42 +370,43 @@ async function startPackOpening() {
     const setId = document.getElementById('set-selector').value;
     const logoUrl = document.getElementById('shop-pack-logo').src;
     const overlay = document.getElementById('pack-opening-overlay');
+    const loadingText = document.getElementById('pack-loading');
     
+    // UI Setup
     document.getElementById('current-pack-img-overlay').src = logoUrl;
     document.getElementById('pack-tear-area').style.display = 'flex';
     document.getElementById('card-reveal-area').style.display = 'none';
-    document.getElementById('pack-loading').style.display = 'block';
+    loadingText.style.display = 'block';
+    loadingText.innerHTML = 'Preparando cartas...';
     overlay.style.display = 'flex';
 
-    try {
-        // Pedimos solo los campos necesarios (select) para que la carga sea instantánea
-        const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=set.id:${setId}&select=id,images`);
-        const data = await res.json();
-        
-        if(!data.data || data.data.length === 0) throw new Error("No hay cartas");
+    state.activePulls = [];
 
-        state.activePulls = [];
-        const allCards = data.data;
+    // EN VEZ DE ESPERAR A LA API, GENERAMOS LAS CARTAS NOSOTROS
+    // Elegimos números al azar basados en el set seleccionado
+    for (let i = 0; i < 6; i++) {
+        // Generamos un número de carta al azar entre 1 y 100
+        const randomNum = Math.floor(Math.random() * 100) + 1;
         
-        // Simulación de rarezas (1 rara asegurada)
-        for(let i=0; i<6; i++) {
-            const randCard = allCards[Math.floor(Math.random() * allCards.length)];
-            state.activePulls.push({ 
-                id: randCard.id, 
-                img: randCard.images.large, 
-                source: 'pack' 
-            });
-        }
-        
-        document.getElementById('pack-loading').style.display = 'none';
-        // Habilitar el gesto de rasgar (Asegúrate de tener esta función o usa un click simple)
-        document.getElementById('pack-tear-area').onclick = executeTear; 
-        
-    } catch(e) {
-        console.error(e);
-        alert("El servidor de cartas está saturado. Intenta de nuevo.");
-        overlay.style.display = 'none';
+        // CONSTRUIMOS LA URL DIRECTA (Sin pasar por el servidor de la API)
+        // La mayoría de las imágenes siguen este patrón: id-numero_hires.png
+        const cardId = `${setId}-${randomNum}`;
+        const directImgUrl = `https://images.pokemontcg.io/${setId}/${randomNum}_hires.png`;
+
+        state.activePulls.push({ 
+            id: cardId, 
+            img: directImgUrl, 
+            source: 'pack' 
+        });
     }
+
+    // Como no dependemos de la API, esto es casi instantáneo
+    setTimeout(() => {
+        loadingText.style.display = 'none';
+        const tearArea = document.getElementById('pack-tear-area');
+        tearArea.onclick = executeTear; 
+        setupTearGestures(); 
+    }, 500);
 }
     function executeTear() {
         const tearArea = document.getElementById('pack-tear-area');
@@ -557,6 +558,7 @@ async function searchRealPrice() {
 </script>
 </body>
 </html>
+
 
 
 
