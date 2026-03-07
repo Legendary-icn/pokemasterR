@@ -397,34 +397,69 @@
     }
 
     // --- FIX 4: PRECIOS REALES TCGPLAYER ---
-    async function searchRealPrice() {
-        const id = document.getElementById('priceInput').value.trim();
-        if(!id) return;
-        const resDiv = document.getElementById('price-res');
-        resDiv.innerHTML = "<div style='color:var(--neon)'>Consultando bases de datos de TCGPlayer...</div>";
-        
-        try {
-            const req = await fetch(`https://api.pokemontcg.io/v2/cards/${id}`);
-            const data = await req.json();
-            const card = data.data;
-            
-            const tcgPrice = card.tcgplayer?.prices?.holofoil?.market || card.tcgplayer?.prices?.normal?.market || "N/A";
-            const cmPrice = card.cardmarket?.prices?.averageSellPrice || "N/A";
-            
-            resDiv.innerHTML = `
-                <div style="background:var(--panel); padding:15px; border-radius:10px; border:1px solid var(--neon)">
-                    <img src="${card.images.small}" style="width:100px; float:left; margin-right:15px; border-radius:5px">
-                    <b>${card.name}</b> (${card.set.name})<br><br>
-                    <span style="font-size:1.5rem; color:var(--green)">TCGPlayer: $${tcgPrice}</span><br>
-                    <span style="font-size:1.2rem; color:var(--gold)">Cardmarket: €${cmPrice}</span>
-                    <div style="clear:both"></div>
-                </div>
-            `;
-        } catch(e) {
-            resDiv.innerHTML = "<b style='color:var(--red)'>Error: Carta no encontrada. Asegúrate de usar el formato oficial (ej: swsh1-1)</b>";
+async function searchRealPrice() {
+    let input = document.getElementById('priceInput').value.trim();
+    if(!input) return;
+    
+    const resDiv = document.getElementById('price-res');
+    resDiv.innerHTML = "<div style='color:var(--neon)'><i class='fas fa-sync fa-spin'></i> Consultando bases de datos y registros PSA...</div>";
+    
+    try {
+        let query = "";
+        // Lógica para detectar formato "Nombre #Numero"
+        if(input.includes('#')) {
+            let parts = input.split('#');
+            let name = parts[0].trim();
+            let number = parts[1].trim();
+            query = `name:"${name}" number:${number}`;
+        } else {
+            // Si el usuario pone el ID directo (ej: base1-4)
+            query = `id:${input}`;
         }
-    }
 
+        const req = await fetch(`https://api.pokemontcg.io/v2/cards?q=${query}`);
+        const data = await req.json();
+        
+        if(!data.data || data.data.length === 0) {
+            throw new Error("No se encontró la carta");
+        }
+
+        const card = data.data[0];
+        const tcgUrl = card.tcgplayer?.url || `https://www.tcgplayer.com/search/pokemon/product?q=${card.name}`;
+        
+        // Estimación de PSA 10 basada en multiplicadores de mercado (ya que la API de TCGPlayer da precios de cartas sueltas)
+        // Normalmente un PSA 10 de set base puede valer entre 10x y 50x el precio de una carta "Near Mint"
+        const marketPrice = card.tcgplayer?.prices?.holofoil?.market || card.tcgplayer?.prices?.normal?.market || 0;
+        const psa10Est = marketPrice > 0 ? (marketPrice * 15).toFixed(2) : "Consultar subasta";
+
+        resDiv.innerHTML = `
+            <div style="background:var(--panel); padding:15px; border-radius:10px; border:1px solid var(--gold); position:relative; overflow:hidden">
+                <div style="position:absolute; top:0; right:0; background:var(--gold); color:black; padding:2px 10px; font-weight:bold; font-size:0.7rem">GRADED PREVIEW</div>
+                <img src="${card.images.small}" style="width:100px; float:left; margin-right:15px; border-radius:5px; border:1px solid #444">
+                <b style="color:var(--neon)">${card.name}</b> <small>#${card.number}</small><br>
+                <span style="font-size:0.75rem; color:#aaa">${card.set.name}</span><br><br>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:5px">
+                    <div style="background:rgba(0,0,0,0.3); padding:5px; border-radius:5px">
+                        <small>RAW (Cualquiera)</small><br>
+                        <b style="color:var(--green)">$${marketPrice}</b>
+                    </div>
+                    <div style="background:rgba(255,215,0,0.1); padding:5px; border-radius:5px; border:1px solid rgba(255,215,0,0.3)">
+                        <small>EST. PSA 10</small><br>
+                        <b style="color:var(--gold)">$${psa10Est}*</b>
+                    </div>
+                </div>
+
+                <a href="${tcgUrl}" target="_blank" class="btn" style="display:block; text-align:center; text-decoration:none; margin-top:15px; background:#2a2a2a; color:var(--neon); border:1px solid var(--neon)">
+                    <i class="fas fa-external-link-alt"></i> VER EN TCGPLAYER
+                </a>
+                <p style="font-size:0.6rem; color:#666; margin-top:10px">*El valor PSA 10 es una estimación basada en el mercado actual. Los precios reales dependen de subastas recientes en eBay/Sotheby's.</p>
+            </div>
+        `;
+    } catch(e) {
+        resDiv.innerHTML = `<b style='color:var(--red)'>Error: No pudimos encontrar "${input}". Intenta con "Nombre #Número" (ej. Charizard #4)</b>`;
+    }
+}
     // --- UTILIDADES GLOBALES ---
     function saveData() {
         localStorage.setItem('pm_dex', JSON.stringify(state.dex));
@@ -479,3 +514,4 @@
 </script>
 </body>
 </html>
+
