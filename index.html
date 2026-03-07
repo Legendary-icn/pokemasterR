@@ -360,44 +360,54 @@
     }
 
     // --- APERTURA DE SOBRES & GESTOS TÁCTILES ---
-    async function startPackOpening() {
-        if(state.dailyPacks <= 0) {
-            alert("¡No te quedan sobres hoy! Vuelve mañana.");
-            return;
-        }
+async function startPackOpening() {
+    if(state.dailyPacks <= 0) {
+        alert("¡No te quedan sobres hoy! Vuelve mañana.");
+        return;
+    }
 
-        const setId = document.getElementById('set-selector').value;
-        const logoUrl = document.getElementById('shop-pack-logo').src;
-        const overlay = document.getElementById('pack-opening-overlay');
-        const loadingText = document.getElementById('pack-loading');
+    const setId = document.getElementById('set-selector').value;
+    const logoUrl = document.getElementById('shop-pack-logo').src;
+    const overlay = document.getElementById('pack-opening-overlay');
+    const loadingText = document.getElementById('pack-loading');
+    
+    document.getElementById('current-pack-img-overlay').src = logoUrl;
+    document.getElementById('pack-tear-area').style.display = 'flex';
+    document.getElementById('card-reveal-area').style.display = 'none';
+    loadingText.style.display = 'block';
+    overlay.style.display = 'flex';
+
+    state.activePulls = [];
+
+    try {
+        // Pedimos las cartas reales del set a la API
+        const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=set.id:${setId}&pageSize=200`);
+        const data = await res.json();
         
-        document.getElementById('current-pack-img-overlay').src = logoUrl;
-        document.getElementById('pack-tear-area').style.display = 'flex';
-        document.getElementById('card-reveal-area').style.display = 'none';
-        loadingText.style.display = 'block';
-        overlay.style.display = 'flex';
+        if(!data.data || data.data.length === 0) throw new Error("Set vacío");
 
-        state.activePulls = [];
-
-        // Generar 6 cartas rápidamente (sin API pesada)
+        const setCards = data.data;
+        
+        // Seleccionamos 6 cartas aleatorias que SÍ existen
         for (let i = 0; i < 6; i++) {
-            const randomNum = Math.floor(Math.random() * 100) + 1;
-            const cardId = `${setId}-${randomNum}`;
-            const directImgUrl = `https://images.pokemontcg.io/${setId}/${randomNum}_hires.png`;
-
+            const randomCard = setCards[Math.floor(Math.random() * setCards.length)];
             state.activePulls.push({ 
-                id: cardId, 
-                img: directImgUrl, 
+                id: randomCard.id, 
+                img: randomCard.images.large || randomCard.images.small, 
                 source: 'pack' 
             });
         }
-
-        setTimeout(() => {
-            loadingText.style.display = 'none';
-            setupTearGestures(); 
-        }, 500);
+    } catch (error) {
+        alert("Hubo un error al conectar con la caja de sobres. Intenta de nuevo.");
+        overlay.style.display = 'none';
+        return;
     }
 
+    setTimeout(() => {
+        loadingText.style.display = 'none';
+        setupTearGestures(); 
+    }, 500);
+}
     function setupTearGestures() {
         const tearArea = document.getElementById('pack-tear-area');
         
@@ -590,3 +600,4 @@
 </script>
 </body>
 </html>
+
