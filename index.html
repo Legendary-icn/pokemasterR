@@ -461,44 +461,46 @@ async function searchRealPrice() {
     if(!input) return;
     
     const resDiv = document.getElementById('price-res');
-    resDiv.innerHTML = `<div style="color:var(--neon); text-align:center">
-        <i class="fas fa-circle-notch fa-spin"></i> Consultando TCGPlayer...</div>`;
+    resDiv.innerHTML = "<div style='color:var(--neon)'><i class='fas fa-sync fa-spin'></i> Buscando coincidencias en TCGPlayer...</div>";
     
     try {
-        // Optimizamos la query para buscar exactamente lo que el usuario quiere
-        let query = input.includes('#') ? 
-            `name:"${input.split('#')[0].trim()}" number:${input.split('#')[1].trim()}` : 
-            `name:"${input}*"`; // El asterisco ayuda a buscar variaciones rápido
-
-        const req = await fetch(`https://api.pokemontcg.io/v2/cards?q=${query}&pageSize=12&orderBy=-set.releaseDate`);
-        const data = await req.json();
-        
-        if(!data.data || data.data.length === 0) {
-            resDiv.innerHTML = "<b style='color:var(--red)'>Sin resultados. Prueba con: Nombre #Numero</b>";
-            return;
+        let query = "";
+        if(input.includes('#')) {
+            let [name, number] = input.split('#');
+            query = `name:"${name.trim()}" number:${number.trim()}`;
+        } else {
+            query = `name:"${input}"`;
         }
 
-        let html = '<div style="display:grid; gap:10px">';
-        data.data.forEach(card => {
-            const prices = card.tcgplayer?.prices;
-            const price = prices?.holofoil?.market || prices?.normal?.market || prices?.reverseHolofoil?.market || "0.00";
-            
-            html += `
-                <div style="background:var(--panel); padding:10px; border-radius:10px; display:flex; align-items:center; gap:12px; border:1px solid #333">
-                    <img src="${card.images.small}" style="width:60px; border-radius:4px">
-                    <div style="flex:1">
-                        <div style="font-size:0.85rem; font-weight:bold">${card.name}</div>
-                        <div style="font-size:0.7rem; color:#888">${card.set.name}</div>
-                        <div style="color:var(--green); font-weight:bold; margin-top:4px">$${price} USD</div>
-                    </div>
-                    <a href="${card.tcgplayer?.url || '#'}" target="_blank" style="color:var(--neon); padding:10px"><i class="fas fa-external-link-alt"></i></a>
-                </div>`;
-        });
-        html += '</div>';
-        resDiv.innerHTML = html;
+        const req = await fetch(`https://api.pokemontcg.io/v2/cards?q=${query}&orderBy=-set.releaseDate`);
+        const data = await req.json();
         
+        if(!data.data || data.data.length === 0) throw new Error();
+
+        resDiv.innerHTML = `<div style="display:flex; flex-direction:column; gap:15px"></div>`;
+        const container = resDiv.firstChild;
+
+        data.data.forEach(card => {
+            const marketPrice = card.tcgplayer?.prices?.holofoil?.market || card.tcgplayer?.prices?.normal?.market || card.tcgplayer?.prices?.reverseHolofoil?.market || 0;
+            const psa10Est = marketPrice > 0 ? (marketPrice * 12.5).toFixed(2) : "N/A";
+
+            container.innerHTML += `
+                <div style="background:var(--panel); padding:12px; border-radius:10px; border:1px solid #333; display:flex; align-items:center; gap:10px">
+                    <img src="${card.images.small}" style="width:70px; border-radius:4px">
+                    <div style="flex:1">
+                        <b style="color:var(--neon); font-size:0.9rem">${card.name}</b><br>
+                        <small style="color:#aaa">${card.set.name} (${card.number}/${card.set.printedTotal})</small><br>
+                        <div style="margin-top:5px">
+                            <span style="color:var(--green); font-weight:bold">$${marketPrice} USD</span>
+                            <span style="color:var(--gold); font-size:0.7rem; margin-left:10px">PSA 10 Est: $${psa10Est}</span>
+                        </div>
+                    </div>
+                    <a href="${card.tcgplayer?.url || '#'}" target="_blank" style="color:var(--neon)"><i class="fas fa-external-link-alt"></i></a>
+                </div>
+            `;
+        });
     } catch(e) {
-        resDiv.innerHTML = "<b style='color:var(--red)'>Error de conexión con el mercado.</b>";
+        resDiv.innerHTML = `<b style='color:var(--red)'>No se encontraron resultados. Usa: Nombre #Número</b>`;
     }
 }
     // --- UTILIDADES GLOBALES ---
@@ -555,6 +557,7 @@ async function searchRealPrice() {
 </script>
 </body>
 </html>
+
 
 
 
