@@ -106,20 +106,20 @@
 </nav>
 
 <div id="pack-opening-overlay" class="overlay">
-    <div id="pack-tear-area" style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; touch-action: none;">
+    <div id="pack-tear-area" style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; touch-action: none; cursor: pointer;">
         <img id="current-pack-img-overlay" src="" style="width: 200px; max-height: 300px; object-fit: contain; filter: drop-shadow(0 0 20px rgba(0,242,255,0.4)); transition: transform 0.2s;">
         <div style="color: var(--neon); margin-top: 30px; font-weight: bold; font-size: 1.2rem; animation: pulse 1.5s infinite;">
             <i class="fas fa-arrow-down"></i> DESLIZA PARA RASGAR <i class="fas fa-arrow-down"></i>
         </div>
     </div>
     <div id="card-reveal-area" style="display: none; width: 100%; height: 100%; flex-direction: column; justify-content: center; align-items: center;">
-        <img id="revealed-card" src="" style="width: 250px; border-radius: 12px; box-shadow: 0 0 30px rgba(255,215,0,0.3); transition: transform 0.3s;">
+        <img id="revealed-card" src="" style="width: 250px; border-radius: 12px; box-shadow: 0 0 30px rgba(255,215,0,0.3); transition: transform 0.3s; cursor: pointer;">
         <div style="color: white; margin-top: 20px; font-size: 1rem;">Toca la carta para ver la siguiente</div>
         <div id="pull-counter" style="color: var(--neon); margin-top: 10px; font-weight: bold;">Carta 1 de 6</div>
     </div>
     <div id="pack-loading" style="display: none; color: white;">
         <div style="width: 40px; height: 40px; border: 4px solid #333; border-top-color: var(--neon); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
-        Obteniendo cartas del servidor...
+        Preparando cartas...
     </div>
 </div>
 
@@ -216,7 +216,7 @@
     </div>
 
     <div id="tab-val" class="panel">
-        <input type="text" id="priceInput" placeholder="ID de la carta (ej: swsh1-1)" style="width:calc(100% - 26px); padding:12px; background:#222; border:1px solid #444; color:white; border-radius:8px">
+        <input type="text" id="priceInput" placeholder="Nombre de carta o ID (ej: Charizard o swsh1-1)" style="width:calc(100% - 26px); padding:12px; background:#222; border:1px solid #444; color:white; border-radius:8px">
         <button class="btn" onclick="searchRealPrice()">CONSULTAR TCGPLAYER</button>
         <div id="price-res" style="margin-top:20px"></div>
     </div>
@@ -234,97 +234,86 @@
         activePulls: [], currentPullIndex: 0
     };
 
-    // --- CÁMARA & V/F (Mantenido intacto) ---
-async function initCamera(deviceId = null) {
-    try {
-        const constraints = {
-            video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: "environment" }
-        };
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        const video = document.getElementById('video');
-        video.srcObject = stream;
+    // --- CÁMARA & V/F ---
+    async function initCamera(deviceId = null) {
+        try {
+            const constraints = {
+                video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: "environment" }
+            };
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            const video = document.getElementById('video');
+            video.srcObject = stream;
 
-        // Actualizar lista de cámaras solo la primera vez
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevices = devices.filter(device => device.kind === 'videoinput');
-        
-        let camSelector = document.getElementById('cam-selector');
-        if(!camSelector) {
-            camSelector = document.createElement('select');
-            camSelector.id = 'cam-selector';
-            camSelector.style = "width:100%; margin-top:10px; background:#222; color:white; border:1px solid var(--neon); padding:5px; border-radius:5px;";
-            camSelector.onchange = (e) => initCamera(e.target.value);
-            document.getElementById('tab-vf').prepend(camSelector);
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
+            
+            let camSelector = document.getElementById('cam-selector');
+            if(!camSelector) {
+                camSelector = document.createElement('select');
+                camSelector.id = 'cam-selector';
+                camSelector.style = "width:100%; margin-top:10px; background:#222; color:white; border:1px solid var(--neon); padding:5px; border-radius:5px;";
+                camSelector.onchange = (e) => initCamera(e.target.value);
+                document.getElementById('tab-vf').prepend(camSelector);
+            }
+            
+            camSelector.innerHTML = videoDevices.map(device => 
+                `<option value="${device.deviceId}" ${device.deviceId === deviceId ? 'selected' : ''}>${device.label || 'Cámara ' + (videoDevices.indexOf(device)+1)}</option>`
+            ).join('');
+
+        } catch (e) { 
+            console.error("Error al acceder a la cámara:", e);
         }
+    }
+
+    async function prepScan(mode) {
+        const id = document.getElementById('vfInput').value.trim().replace('/', '-');
+        if(!id) return alert("Escribe el ID primero (ej: sv3pt5-151)");
         
-        camSelector.innerHTML = videoDevices.map(device => 
-            `<option value="${device.deviceId}" ${device.deviceId === deviceId ? 'selected' : ''}>${device.label || 'Cámara ' + (videoDevices.indexOf(device)+1)}</option>`
-        ).join('');
-
-    } catch (e) { 
-        console.error("Error al acceder a la cámara:", e);
-        alert("No se pudo acceder a la cámara seleccionada.");
-    }
-}
-// BUSCAR CARTA PARA COMPARACIÓN EN V/F
-async function prepScan(mode) {
-    const id = document.getElementById('vfInput').value.trim().replace('/', '-');
-    if(!id) return alert("Escribe el ID primero (ej: sv3pt5-151)");
-    
-    state.scanLock.id = id;
-    const ghost = document.getElementById('ghost-overlay');
-    
-    // Feedback visual de carga
-    ghost.src = "https:// ownership.com/loading.gif"; // Opcional: un placeholder
-    ghost.style.display = 'block';
-    
-    try {
-        // Buscamos la imagen oficial para el overlay
-        const res = await fetch(`https://api.pokemontcg.io/v2/cards/${id}`);
-        const data = await res.json();
-        if(data.data) {
-            ghost.src = data.data.images.small;
-            document.getElementById('btn-scan-ia').style.display = 'block';
-            document.getElementById('btn-scan-ia').dataset.mode = mode;
-        } else {
-            alert("No se encontró la carta con ese ID.");
+        state.scanLock.id = id;
+        const ghost = document.getElementById('ghost-overlay');
+        
+        ghost.style.display = 'block';
+        
+        try {
+            const res = await fetch(`https://api.pokemontcg.io/v2/cards/${id}`);
+            const data = await res.json();
+            if(data.data) {
+                ghost.src = data.data.images.small;
+                document.getElementById('btn-scan-ia').style.display = 'block';
+                document.getElementById('btn-scan-ia').dataset.mode = mode;
+            } else {
+                alert("No se encontró la carta con ese ID.");
+                ghost.style.display = 'none';
+            }
+        } catch (e) {
+            alert("Error al obtener referencia de la carta.");
         }
-    } catch (e) {
-        alert("Error al obtener referencia de la carta.");
     }
-}
 
-// ESCANEO IA SIN TRABARSE
-function executeAIScan() {
-    const mode = document.getElementById('btn-scan-ia').dataset.mode;
-    const btn = document.getElementById('btn-scan-ia');
-    
-    btn.disabled = true;
-    btn.innerText = "PROCESANDO PIXELES...";
-    
-    document.getElementById('ai-scanner-ui').style.display = 'block';
-    document.getElementById('ai-checks').innerHTML = "<div>Iniciando análisis de textura...</div>";
-    
-    // Usamos una secuencia de timeouts para no bloquear el hilo principal
-    setTimeout(() => {
-        document.getElementById('ai-checks').innerHTML += "<div style='color:var(--neon)'>✓ Patrón holográfico detectado</div>";
-        setTimeout(() => {
-            document.getElementById('ai-checks').innerHTML += "<div style='color:var(--neon)'>✓ Micro-texto verificado</div>";
-            setTimeout(() => {
-                finalizeScan(true, mode);
-                btn.disabled = false;
-                btn.innerText = "ESCANEAR AHORA";
-            }, 800);
-        }, 800);
-    }, 800);
-}
     function executeAIScan() {
         const mode = document.getElementById('btn-scan-ia').dataset.mode;
+        const btn = document.getElementById('btn-scan-ia');
+        
+        btn.disabled = true;
+        btn.innerText = "PROCESANDO PIXELES...";
         document.getElementById('video').style.display = 'none';
+        
         document.getElementById('ai-scanner-ui').style.display = 'block';
-        document.getElementById('ai-checks').innerHTML = "<div style='color:var(--neon)'>Analizando texturas...</div>";
-        setTimeout(() => finalizeScan(true, mode), 1500); // Simplificado para rapidez
+        document.getElementById('ai-checks').innerHTML = "<div>Iniciando análisis de textura...</div>";
+        
+        setTimeout(() => {
+            document.getElementById('ai-checks').innerHTML += "<div style='color:var(--neon)'>✓ Patrón holográfico detectado</div>";
+            setTimeout(() => {
+                document.getElementById('ai-checks').innerHTML += "<div style='color:var(--neon)'>✓ Micro-texto verificado</div>";
+                setTimeout(() => {
+                    finalizeScan(true, mode);
+                    btn.disabled = false;
+                    btn.innerText = "ESCANEAR AHORA";
+                }, 800);
+            }, 800);
+        }, 800);
     }
+
     function finalizeScan(isReal, mode) {
         state.scanLock[mode] = true;
         document.getElementById('ai-title').innerHTML = "VALIDACIÓN EXITOSA";
@@ -333,10 +322,15 @@ function executeAIScan() {
             document.getElementById('btn-scan-ia').style.display = 'none';
         }
     }
+
     function addToDexFinal() {
         state.dex.push({ id: state.scanLock.id, img: `https://images.pokemontcg.io/${state.scanLock.id.replace('/','-')}_hires.png`, source: 'scan' });
-        saveData(); alert("¡Añadida a tu Dex!"); resetVF(); showTab('dex', document.querySelector('[onclick*="dex"]'));
+        saveData(); 
+        alert("¡Añadida a tu Dex!"); 
+        resetVF(); 
+        showTab('dex', document.querySelector('[onclick*="dex"]'));
     }
+
     function resetVF() {
         document.getElementById('video').style.display = 'block';
         document.getElementById('ai-scanner-ui').style.display = 'none';
@@ -346,7 +340,7 @@ function executeAIScan() {
         state.scanLock = { front: false, back: false, id: '' };
     }
 
-    // --- FIX 1 & 2: CARGA DINÁMICA DE SETS Y SOBRES REALES ---
+    // --- CARGA DINÁMICA DE SETS Y SOBRES ---
     async function loadAllSets() {
         try {
             const res = await fetch('https://api.pokemontcg.io/v2/sets?orderBy=-releaseDate');
@@ -365,52 +359,67 @@ function executeAIScan() {
         document.getElementById('shop-pack-logo').src = logoUrl;
     }
 
-    // --- FIX 3: APERTURA TÁCTIL ---
-async function startPackOpening() {
-    const setId = document.getElementById('set-selector').value;
-    const logoUrl = document.getElementById('shop-pack-logo').src;
-    const overlay = document.getElementById('pack-opening-overlay');
-    const loadingText = document.getElementById('pack-loading');
-    
-    // UI Setup
-    document.getElementById('current-pack-img-overlay').src = logoUrl;
-    document.getElementById('pack-tear-area').style.display = 'flex';
-    document.getElementById('card-reveal-area').style.display = 'none';
-    loadingText.style.display = 'block';
-    loadingText.innerHTML = 'Preparando cartas...';
-    overlay.style.display = 'flex';
+    // --- APERTURA DE SOBRES & GESTOS TÁCTILES ---
+    async function startPackOpening() {
+        if(state.dailyPacks <= 0) {
+            alert("¡No te quedan sobres hoy! Vuelve mañana.");
+            return;
+        }
 
-    state.activePulls = [];
-
-    // EN VEZ DE ESPERAR A LA API, GENERAMOS LAS CARTAS NOSOTROS
-    // Elegimos números al azar basados en el set seleccionado
-    for (let i = 0; i < 6; i++) {
-        // Generamos un número de carta al azar entre 1 y 100
-        const randomNum = Math.floor(Math.random() * 100) + 1;
+        const setId = document.getElementById('set-selector').value;
+        const logoUrl = document.getElementById('shop-pack-logo').src;
+        const overlay = document.getElementById('pack-opening-overlay');
+        const loadingText = document.getElementById('pack-loading');
         
-        // CONSTRUIMOS LA URL DIRECTA (Sin pasar por el servidor de la API)
-        // La mayoría de las imágenes siguen este patrón: id-numero_hires.png
-        const cardId = `${setId}-${randomNum}`;
-        const directImgUrl = `https://images.pokemontcg.io/${setId}/${randomNum}_hires.png`;
+        document.getElementById('current-pack-img-overlay').src = logoUrl;
+        document.getElementById('pack-tear-area').style.display = 'flex';
+        document.getElementById('card-reveal-area').style.display = 'none';
+        loadingText.style.display = 'block';
+        overlay.style.display = 'flex';
 
-        state.activePulls.push({ 
-            id: cardId, 
-            img: directImgUrl, 
-            source: 'pack' 
-        });
+        state.activePulls = [];
+
+        // Generar 6 cartas rápidamente (sin API pesada)
+        for (let i = 0; i < 6; i++) {
+            const randomNum = Math.floor(Math.random() * 100) + 1;
+            const cardId = `${setId}-${randomNum}`;
+            const directImgUrl = `https://images.pokemontcg.io/${setId}/${randomNum}_hires.png`;
+
+            state.activePulls.push({ 
+                id: cardId, 
+                img: directImgUrl, 
+                source: 'pack' 
+            });
+        }
+
+        setTimeout(() => {
+            loadingText.style.display = 'none';
+            setupTearGestures(); 
+        }, 500);
     }
 
-    // Como no dependemos de la API, esto es casi instantáneo
-    setTimeout(() => {
-        loadingText.style.display = 'none';
+    function setupTearGestures() {
         const tearArea = document.getElementById('pack-tear-area');
-        tearArea.onclick = executeTear; 
-        setupTearGestures(); 
-    }, 500);
-}
+        
+        // Habilitar clic para PC
+        tearArea.onclick = executeTear;
+        
+        // Habilitar Swipe hacia abajo para Móviles
+        let startY = 0;
+        tearArea.ontouchstart = (e) => { startY = e.touches[0].clientY; };
+        tearArea.ontouchmove = (e) => {
+            let currentY = e.touches[0].clientY;
+            if (currentY - startY > 60) { // Si desliza más de 60px hacia abajo
+                executeTear();
+            }
+        };
+    }
+
     function executeTear() {
         const tearArea = document.getElementById('pack-tear-area');
-        tearArea.ontouchmove = null; tearArea.onmousemove = null; // Bloquear múltiples rasgados
+        // Bloqueamos múltiples activaciones
+        tearArea.ontouchmove = null; 
+        tearArea.onclick = null;
         
         document.getElementById('current-pack-img-overlay').style.transform = "scale(1.2) translateY(500px)";
         document.getElementById('current-pack-img-overlay').style.opacity = "0";
@@ -429,7 +438,6 @@ async function startPackOpening() {
 
     function showNextCard() {
         if(state.currentPullIndex >= state.activePulls.length) {
-            // Termina el sobre
             state.packCards = state.packCards.concat(state.activePulls);
             saveData();
             document.getElementById('pack-opening-overlay').style.display = 'none';
@@ -456,73 +464,69 @@ async function startPackOpening() {
         };
     }
 
-    // --- FIX 4: PRECIOS REALES TCGPLAYER ---
-async function searchRealPrice() {
-    let input = document.getElementById('priceInput').value.trim();
-    if(!input) return;
-    
-    const resDiv = document.getElementById('price-res');
-    resDiv.innerHTML = `<div style='color:var(--neon)'>
-        <i class='fas fa-search fa-spin'></i> Localizando en el mercado...</div>`;
-    
-    try {
-        // Limpiamos el input para que la búsqueda sea más amplia (fuzzy search)
-        let searchTerm = input.replace('#', ' ');
+    // --- PRECIOS REALES TCGPLAYER (Búsqueda Inteligente) ---
+    async function searchRealPrice() {
+        let input = document.getElementById('priceInput').value.trim();
+        if(!input) return;
         
-        // Usamos una búsqueda más "suave": solo nombre y que nos traiga las primeras 10 coincidencias
-        // Esto evita que si el número está mal escrito, la API de error total.
-        const response = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:"${searchTerm}*"&pageSize=10&orderBy=-set.releaseDate`);
-        const data = await response.json();
+        const resDiv = document.getElementById('price-res');
+        resDiv.innerHTML = `<div style='color:var(--neon); text-align:center;'>
+            <i class='fas fa-search-dollar fa-spin'></i> Escaneando TCGPlayer...</div>`;
         
-        if(!data.data || data.data.length === 0) {
-            // Si la API falla, creamos un botón de emergencia para buscar en Google/TCGPlayer directamente
-            resDiv.innerHTML = `
-                <div style="text-align:center; padding:10px;">
-                    <p style='color:var(--red)'>No hay datos exactos en el servidor.</p>
-                    <button class="btn" onclick="window.open('https://www.tcgplayer.com/search/pokemon/product?q=${encodeURIComponent(input)}')">
-                        BUSCAR DIRECTO EN TCGPLAYER
-                    </button>
-                </div>`;
-            return;
-        }
+        try {
+            let query = "";
+            if (input.includes('#')) {
+                let parts = input.split('#');
+                let name = parts[0].trim();
+                let number = parts[1].trim();
+                query = `name:"${name}" number:${number}`;
+            } else {
+                query = `name:"${input}*"`;
+            }
 
-        resDiv.innerHTML = `<div style="display:flex; flex-direction:column; gap:12px"></div>`;
-        const container = resDiv.firstChild;
-
-        data.data.forEach(card => {
-            // Extraemos el precio de mercado o el precio promedio
-            const prices = card.tcgplayer?.prices;
-            const marketPrice = prices?.holofoil?.market || prices?.normal?.market || prices?.reverseHolofoil?.market || "---";
+            const response = await fetch(`https://api.pokemontcg.io/v2/cards?q=${query}&pageSize=15&orderBy=-set.releaseDate`);
+            const data = await response.json();
             
-            // Si no hay precio, calculamos un estimado basado en rareza (opcional)
-            const psa10Est = (marketPrice !== "---") ? (parseFloat(marketPrice) * 10).toFixed(2) : "N/A";
+            if(!data.data || data.data.length === 0) {
+                if (input.includes('#')) {
+                    resDiv.innerHTML = "<div style='color:var(--gold)'>Afinando búsqueda solo por nombre...</div>";
+                    document.getElementById('priceInput').value = input.split('#')[0].trim();
+                    return searchRealPrice();
+                }
+                throw new Error("No results");
+            }
 
-            // Creamos un enlace de búsqueda de TCGPlayer real por si el link de la API está roto
-            const fallbackLink = `https://www.tcgplayer.com/search/pokemon/product?q=${encodeURIComponent(card.name + " " + card.number)}`;
+            resDiv.innerHTML = `<div style="display:grid; gap:10px; animation: fadeIn 0.4s"></div>`;
+            const container = resDiv.firstChild;
 
-            container.innerHTML += `
-                <div style="background:var(--panel); padding:12px; border-radius:12px; border:1px solid #333; display:flex; align-items:center; gap:10px; animation: fadeIn 0.3s">
-                    <img src="${card.images.small}" style="width:65px; border-radius:4px; box-shadow: 0 4px 8px rgba(0,0,0,0.5)">
-                    <div style="flex:1">
-                        <b style="color:white; font-size:0.85rem">${card.name}</b><br>
-                        <small style="color:var(--neon)">${card.set.name}</small><br>
-                        <div style="margin-top:5px; display:flex; align-items:baseline; gap:10px">
-                            <span style="color:var(--green); font-weight:bold; font-size:1rem">$${marketPrice}</span>
-                            <span style="color:var(--gold); font-size:0.65rem">PSA 10 Est: $${psa10Est}</span>
+            data.data.forEach(card => {
+                const p = card.tcgplayer?.prices;
+                const price = p?.holofoil?.market || p?.normal?.market || p?.reverseHolofoil?.market || "0.00";
+                const tcgLink = card.tcgplayer?.url || `https://www.tcgplayer.com/search/pokemon/product?q=${encodeURIComponent(card.name)}`;
+
+                container.innerHTML += `
+                    <div style="background:var(--panel); padding:10px; border-radius:12px; border:1px solid #333; display:flex; align-items:center; gap:12px">
+                        <img src="${card.images.small}" style="width:60px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); border-radius:4px;">
+                        <div style="flex:1">
+                            <div style="font-size:0.8rem; font-weight:bold; color:white">${card.name}</div>
+                            <div style="font-size:0.65rem; color:#888">${card.set.name} (#${card.number})</div>
+                            <div style="color:var(--green); font-weight:bold; margin-top:3px">$${price} USD</div>
                         </div>
-                    </div>
-                    <a href="${card.tcgplayer?.url || fallbackLink}" target="_blank" 
-                       style="background:rgba(0,242,255,0.1); padding:10px; border-radius:50%; color:var(--neon)">
-                       <i class="fas fa-shopping-cart"></i>
-                    </a>
-                </div>
-            `;
-        });
-    } catch(e) {
-        console.error(e);
-        resDiv.innerHTML = `<b style='color:var(--red)'>Error de conexión. Intenta buscar solo el nombre.</b>`;
+                        <a href="${tcgLink}" target="_blank" style="color:var(--neon); font-size:1.2rem; background:rgba(0,242,255,0.1); padding:10px; border-radius:50%;">
+                            <i class="fas fa-shopping-cart"></i>
+                        </a>
+                    </div>`;
+            });
+
+        } catch(e) {
+            resDiv.innerHTML = `
+                <div style="background:rgba(255,31,31,0.1); padding:10px; border-radius:8px; border:1px solid var(--red); color:var(--red); font-size:0.8rem">
+                    <b>Error de búsqueda:</b> No encontramos "${input}".<br>
+                    <small>Prueba solo con el nombre (ej: Bulbasaur)</small>
+                </div>`;
+        }
     }
-}
+
     // --- UTILIDADES GLOBALES ---
     function saveData() {
         localStorage.setItem('pm_dex', JSON.stringify(state.dex));
@@ -530,11 +534,13 @@ async function searchRealPrice() {
         localStorage.setItem('pm_daily', state.dailyPacks.toString());
         localStorage.setItem('pm_deck', JSON.stringify(state.deck));
     }
+
     function renderDex() {
         const allCards = state.dex.concat(state.packCards);
         document.getElementById('dex-count').innerText = allCards.length;
         document.getElementById('dex-grid').innerHTML = allCards.map(c => `<img src="${c.img}" style="width:100%; border-radius:4px; border:1px solid #333">`).join('');
     }
+
     function renderDeckBuilder() {
         const grid = document.getElementById('inventory-render');
         grid.innerHTML = "";
@@ -543,6 +549,7 @@ async function searchRealPrice() {
             acc[card.id] = acc[card.id] || { ...card, count: 0 };
             acc[card.id].count++; return acc;
         }, {});
+        
         Object.values(grouped).forEach(card => {
             const numInDeck = state.deck.filter(c => c.id === card.id).length;
             const div = document.createElement('div');
@@ -557,7 +564,10 @@ async function searchRealPrice() {
         });
         document.getElementById('deck-builder-count').innerText = state.deck.length;
     }
-    function clearDeck() { if(confirm("¿Vaciar mazo?")) { state.deck = []; saveData(); renderDeckBuilder(); } }
+
+    function clearDeck() { 
+        if(confirm("¿Vaciar mazo?")) { state.deck = []; saveData(); renderDeckBuilder(); } 
+    }
     
     function showTab(tabId, btn) {
         if(state.inMatch) return; 
@@ -566,20 +576,17 @@ async function searchRealPrice() {
         document.getElementById('tab-' + tabId).classList.add('active-panel');
         btn.classList.add('active');
         document.getElementById('vision-container').style.display = (tabId === 'vf') ? 'block' : 'none';
+        
         if(tabId === 'dex') renderDex();
         if(tabId === 'decks') renderDeckBuilder();
     }
 
     // --- INICIALIZACIÓN ---
-    initCamera();
-    loadAllSets();
-    document.getElementById('daily-count').innerText = state.dailyPacks;
+    window.onload = () => {
+        initCamera();
+        loadAllSets();
+        document.getElementById('daily-count').innerText = state.dailyPacks;
+    };
 </script>
 </body>
 </html>
-
-
-
-
-
-
