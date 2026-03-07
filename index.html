@@ -362,16 +362,15 @@
     // --- APERTURA DE SOBRES & GESTOS TÁCTILES ---
 async function startPackOpening() {
     if(state.dailyPacks <= 0) {
-        alert("¡No te quedan sobres hoy! Vuelve mañana.");
+        alert("¡No te quedan sobres hoy!");
         return;
     }
 
     const setId = document.getElementById('set-selector').value;
-    const logoUrl = document.getElementById('shop-pack-logo').src;
     const overlay = document.getElementById('pack-opening-overlay');
     const loadingText = document.getElementById('pack-loading');
     
-    document.getElementById('current-pack-img-overlay').src = logoUrl;
+    // Resetear UI del overlay
     document.getElementById('pack-tear-area').style.display = 'flex';
     document.getElementById('card-reveal-area').style.display = 'none';
     loadingText.style.display = 'block';
@@ -380,33 +379,30 @@ async function startPackOpening() {
     state.activePulls = [];
 
     try {
-        // Pedimos las cartas reales del set a la API
-        const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=set.id:${setId}&pageSize=200`);
+        // Buscamos las cartas reales de ese SET en internet
+        const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=set.id:${setId}&pageSize=250`);
         const data = await res.json();
         
-        if(!data.data || data.data.length === 0) throw new Error("Set vacío");
+        if(!data.data || data.data.length === 0) throw new Error("No hay cartas");
 
-        const setCards = data.data;
-        
-        // Seleccionamos 6 cartas aleatorias que SÍ existen
-        for (let i = 0; i < 6; i++) {
-            const randomCard = setCards[Math.floor(Math.random() * setCards.length)];
-            state.activePulls.push({ 
-                id: randomCard.id, 
-                img: randomCard.images.large || randomCard.images.small, 
-                source: 'pack' 
-            });
-        }
-    } catch (error) {
-        alert("Hubo un error al conectar con la caja de sobres. Intenta de nuevo.");
-        overlay.style.display = 'none';
-        return;
-    }
+        // Mezclamos y sacamos 6 cartas aleatorias
+        const shuffled = data.data.sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, 6);
 
-    setTimeout(() => {
+        state.activePulls = selected.map(c => ({
+            id: c.id,
+            img: c.images.large, // Usamos la imagen grande para que se vea genial
+            source: 'pack'
+        }));
+
         loadingText.style.display = 'none';
-        setupTearGestures(); 
-    }, 500);
+        setupTearGestures(); // Activamos el deslizamiento
+        
+    } catch (error) {
+        console.error(error);
+        alert("Error al obtener cartas del servidor.");
+        overlay.style.display = 'none';
+    }
 }
     function setupTearGestures() {
         const tearArea = document.getElementById('pack-tear-area');
@@ -600,5 +596,6 @@ async function startPackOpening() {
 </script>
 </body>
 </html>
+
 
 
