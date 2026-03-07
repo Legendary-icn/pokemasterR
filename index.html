@@ -235,12 +235,37 @@
     };
 
     // --- CÁMARA & V/F (Mantenido intacto) ---
-    async function initCamera() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-            document.getElementById('video').srcObject = stream;
-        } catch (e) { console.log("Cámara no disponible"); }
+async function initCamera(deviceId = null) {
+    try {
+        const constraints = {
+            video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: "environment" }
+        };
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        const video = document.getElementById('video');
+        video.srcObject = stream;
+
+        // Actualizar lista de cámaras solo la primera vez
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        
+        let camSelector = document.getElementById('cam-selector');
+        if(!camSelector) {
+            camSelector = document.createElement('select');
+            camSelector.id = 'cam-selector';
+            camSelector.style = "width:100%; margin-top:10px; background:#222; color:white; border:1px solid var(--neon); padding:5px; border-radius:5px;";
+            camSelector.onchange = (e) => initCamera(e.target.value);
+            document.getElementById('tab-vf').prepend(camSelector);
+        }
+        
+        camSelector.innerHTML = videoDevices.map(device => 
+            `<option value="${device.deviceId}" ${device.deviceId === deviceId ? 'selected' : ''}>${device.label || 'Cámara ' + (videoDevices.indexOf(device)+1)}</option>`
+        ).join('');
+
+    } catch (e) { 
+        console.error("Error al acceder a la cámara:", e);
+        alert("No se pudo acceder a la cámara seleccionada.");
     }
+}
     function prepScan(mode) {
         const id = document.getElementById('vfInput').value.trim();
         if(!id) return alert("Escribe el ID primero.");
@@ -297,57 +322,35 @@
     }
 
     // --- FIX 3: APERTURA TÁCTIL ---
-    async function startPackOpening() {
-        if(state.dailyPacks <= 0) return alert("No te quedan sobres hoy.");
-        const setId = document.getElementById('set-selector').value;
-        const logoUrl = document.getElementById('shop-pack-logo').src;
-        
-        // Configurar overlay
-        const overlay = document.getElementById('pack-opening-overlay');
-        document.getElementById('current-pack-img-overlay').src = logoUrl;
-        document.getElementById('pack-tear-area').style.display = 'flex';
-        document.getElementById('card-reveal-area').style.display = 'none';
-        document.getElementById('pack-loading').style.display = 'block';
-        overlay.style.display = 'flex';
+async function startPackOpening() {
+    // Eliminada la restricción de state.dailyPacks
+    const setId = document.getElementById('set-selector').value;
+    const logoUrl = document.getElementById('shop-pack-logo').src;
+    
+    const overlay = document.getElementById('pack-opening-overlay');
+    document.getElementById('current-pack-img-overlay').src = logoUrl;
+    document.getElementById('pack-tear-area').style.display = 'flex';
+    document.getElementById('card-reveal-area').style.display = 'none';
+    document.getElementById('pack-loading').style.display = 'block';
+    overlay.style.display = 'flex';
 
-        // Obtener cartas reales de esa expansión
-        try {
-            const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=set.id:${setId}&pageSize=100`);
-            const data = await res.json();
-            const allCards = data.data;
-            
-            // Elegir 6 al azar
-            state.activePulls = [];
-            for(let i=0; i<6; i++) {
-                const randCard = allCards[Math.floor(Math.random() * allCards.length)];
-                state.activePulls.push({ id: randCard.id, img: randCard.images.large || randCard.images.small, source: 'pack' });
-            }
-            document.getElementById('pack-loading').style.display = 'none';
-            setupTearGestures();
-        } catch(e) {
-            alert("Error conectando al servidor de sobres.");
-            overlay.style.display = 'none';
+    try {
+        const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=set.id:${setId}&pageSize=100`);
+        const data = await res.json();
+        const allCards = data.data;
+        
+        state.activePulls = [];
+        for(let i=0; i<6; i++) {
+            const randCard = allCards[Math.floor(Math.random() * allCards.length)];
+            state.activePulls.push({ id: randCard.id, img: randCard.images.large, source: 'pack' });
         }
+        document.getElementById('pack-loading').style.display = 'none';
+        setupTearGestures();
+    } catch(e) {
+        alert("Error al conectar con el servidor de cartas.");
+        overlay.style.display = 'none';
     }
-
-    let startY = 0;
-    function setupTearGestures() {
-        const tearArea = document.getElementById('pack-tear-area');
-        
-        // Touch (Móviles)
-        tearArea.ontouchstart = (e) => { startY = e.touches[0].clientY; };
-        tearArea.ontouchmove = (e) => {
-            if(e.touches[0].clientY - startY > 150) executeTear();
-        };
-        // Mouse (PC)
-        let isDragging = false;
-        tearArea.onmousedown = (e) => { isDragging = true; startY = e.clientY; };
-        tearArea.onmousemove = (e) => {
-            if(isDragging && e.clientY - startY > 150) executeTear();
-        };
-        window.onmouseup = () => isDragging = false;
-    }
-
+}
     function executeTear() {
         const tearArea = document.getElementById('pack-tear-area');
         tearArea.ontouchmove = null; tearArea.onmousemove = null; // Bloquear múltiples rasgados
@@ -402,62 +405,46 @@ async function searchRealPrice() {
     if(!input) return;
     
     const resDiv = document.getElementById('price-res');
-    resDiv.innerHTML = "<div style='color:var(--neon)'><i class='fas fa-sync fa-spin'></i> Consultando bases de datos y registros PSA...</div>";
+    resDiv.innerHTML = "<div style='color:var(--neon)'><i class='fas fa-sync fa-spin'></i> Buscando coincidencias en TCGPlayer...</div>";
     
     try {
         let query = "";
-        // Lógica para detectar formato "Nombre #Numero"
         if(input.includes('#')) {
-            let parts = input.split('#');
-            let name = parts[0].trim();
-            let number = parts[1].trim();
-            query = `name:"${name}" number:${number}`;
+            let [name, number] = input.split('#');
+            query = `name:"${name.trim()}" number:${number.trim()}`;
         } else {
-            // Si el usuario pone el ID directo (ej: base1-4)
-            query = `id:${input}`;
+            query = `name:"${input}"`;
         }
 
-        const req = await fetch(`https://api.pokemontcg.io/v2/cards?q=${query}`);
+        const req = await fetch(`https://api.pokemontcg.io/v2/cards?q=${query}&orderBy=-set.releaseDate`);
         const data = await req.json();
         
-        if(!data.data || data.data.length === 0) {
-            throw new Error("No se encontró la carta");
-        }
+        if(!data.data || data.data.length === 0) throw new Error();
 
-        const card = data.data[0];
-        const tcgUrl = card.tcgplayer?.url || `https://www.tcgplayer.com/search/pokemon/product?q=${card.name}`;
-        
-        // Estimación de PSA 10 basada en multiplicadores de mercado (ya que la API de TCGPlayer da precios de cartas sueltas)
-        // Normalmente un PSA 10 de set base puede valer entre 10x y 50x el precio de una carta "Near Mint"
-        const marketPrice = card.tcgplayer?.prices?.holofoil?.market || card.tcgplayer?.prices?.normal?.market || 0;
-        const psa10Est = marketPrice > 0 ? (marketPrice * 15).toFixed(2) : "Consultar subasta";
+        resDiv.innerHTML = `<div style="display:flex; flex-direction:column; gap:15px"></div>`;
+        const container = resDiv.firstChild;
 
-        resDiv.innerHTML = `
-            <div style="background:var(--panel); padding:15px; border-radius:10px; border:1px solid var(--gold); position:relative; overflow:hidden">
-                <div style="position:absolute; top:0; right:0; background:var(--gold); color:black; padding:2px 10px; font-weight:bold; font-size:0.7rem">GRADED PREVIEW</div>
-                <img src="${card.images.small}" style="width:100px; float:left; margin-right:15px; border-radius:5px; border:1px solid #444">
-                <b style="color:var(--neon)">${card.name}</b> <small>#${card.number}</small><br>
-                <span style="font-size:0.75rem; color:#aaa">${card.set.name}</span><br><br>
-                
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:5px">
-                    <div style="background:rgba(0,0,0,0.3); padding:5px; border-radius:5px">
-                        <small>RAW (Cualquiera)</small><br>
-                        <b style="color:var(--green)">$${marketPrice}</b>
+        data.data.forEach(card => {
+            const marketPrice = card.tcgplayer?.prices?.holofoil?.market || card.tcgplayer?.prices?.normal?.market || card.tcgplayer?.prices?.reverseHolofoil?.market || 0;
+            const psa10Est = marketPrice > 0 ? (marketPrice * 12.5).toFixed(2) : "N/A";
+
+            container.innerHTML += `
+                <div style="background:var(--panel); padding:12px; border-radius:10px; border:1px solid #333; display:flex; align-items:center; gap:10px">
+                    <img src="${card.images.small}" style="width:70px; border-radius:4px">
+                    <div style="flex:1">
+                        <b style="color:var(--neon); font-size:0.9rem">${card.name}</b><br>
+                        <small style="color:#aaa">${card.set.name} (${card.number}/${card.set.printedTotal})</small><br>
+                        <div style="margin-top:5px">
+                            <span style="color:var(--green); font-weight:bold">$${marketPrice} USD</span>
+                            <span style="color:var(--gold); font-size:0.7rem; margin-left:10px">PSA 10 Est: $${psa10Est}</span>
+                        </div>
                     </div>
-                    <div style="background:rgba(255,215,0,0.1); padding:5px; border-radius:5px; border:1px solid rgba(255,215,0,0.3)">
-                        <small>EST. PSA 10</small><br>
-                        <b style="color:var(--gold)">$${psa10Est}*</b>
-                    </div>
+                    <a href="${card.tcgplayer?.url || '#'}" target="_blank" style="color:var(--neon)"><i class="fas fa-external-link-alt"></i></a>
                 </div>
-
-                <a href="${tcgUrl}" target="_blank" class="btn" style="display:block; text-align:center; text-decoration:none; margin-top:15px; background:#2a2a2a; color:var(--neon); border:1px solid var(--neon)">
-                    <i class="fas fa-external-link-alt"></i> VER EN TCGPLAYER
-                </a>
-                <p style="font-size:0.6rem; color:#666; margin-top:10px">*El valor PSA 10 es una estimación basada en el mercado actual. Los precios reales dependen de subastas recientes en eBay/Sotheby's.</p>
-            </div>
-        `;
+            `;
+        });
     } catch(e) {
-        resDiv.innerHTML = `<b style='color:var(--red)'>Error: No pudimos encontrar "${input}". Intenta con "Nombre #Número" (ej. Charizard #4)</b>`;
+        resDiv.innerHTML = `<b style='color:var(--red)'>No se encontraron resultados. Usa: Nombre #Número</b>`;
     }
 }
     // --- UTILIDADES GLOBALES ---
@@ -514,4 +501,5 @@ async function searchRealPrice() {
 </script>
 </body>
 </html>
+
 
