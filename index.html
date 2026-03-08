@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PokeMaster Elite v21.0 - UNLIMITED</title>
+    <title>PokeMaster Elite v21.0 - OFFLINE EDITION</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --neon: #00f2ff; --red: #ff1f1f; --bg: #0a0a0c; --panel: #16161a; --text: #e0e0e0; --gold: #ffd700; --green: #00ff88; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); overflow-x: hidden; user-select: none; }
 
-        /* NAVEGACIÓN PRINCIPAL */
+        /* NAVEGACIÓN */
         .top-nav { 
             display: flex; background: #000; overflow-x: auto; position: sticky; top: 0; z-index: 1000;
             border-bottom: 2px solid var(--neon); scrollbar-width: none;
@@ -22,301 +22,199 @@
         .top-nav button.active { color: var(--neon); background: rgba(0, 242, 255, 0.1); }
         .top-nav button i { display: block; font-size: 1.1rem; margin-bottom: 4px; }
 
-        /* VISOR DE ESCANEO */
-        #vision-container { position: relative; width: 100%; aspect-ratio: 3/4; background: #000; overflow: hidden; border-bottom: 1px solid #333; }
-        video, #freeze-canvas { width: 100%; height: 100%; object-fit: cover; position: absolute; }
-        #ghost-overlay { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 75%; opacity: 0.4; pointer-events: none; display: none;
-            border: 2px dashed var(--neon); border-radius: 12px; z-index: 10;
-        }
-
-        /* UI DE ESTADO IA */
-        #ai-scanner-ui {
-            position: absolute; top: 10px; left: 10px; right: 10px; z-index: 100;
-            display: none; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 8px;
-            border: 1px solid var(--neon); font-size: 0.7rem;
-        }
-
-        /* CONTENIDO */
+        /* CONTENEDORES */
         .content { padding: 15px; padding-bottom: 80px; }
-        .panel { display: none; }
-        .active-panel { display: block; animation: fadeIn 0.3s; }
-
-        /* TIENDA DE SOBRES */
-        .pack-display { 
-            background: linear-gradient(45deg, #1a1a1e, #25252b); 
-            padding: 20px; border-radius: 15px; text-align: center; border: 1px solid #333;
-            margin-bottom: 15px; display: flex; flex-direction: column; align-items: center;
+        .panel { display: none; animation: fadeIn 0.3s; }
+        .active-panel { display: block; }
+        
+        .card-card {
+            background: var(--panel); border-radius: 12px; padding: 10px;
+            border: 1px solid #333; margin-bottom: 10px; display: flex; align-items: center; gap: 15px;
         }
-        .pack-img { width: 120px; filter: drop-shadow(0 0 10px rgba(0,242,255,0.3)); margin-bottom: 10px; max-height: 80px; object-fit: contain; }
-        select { background: #222; color: white; border: 1px solid var(--neon); padding: 10px; border-radius: 5px; width: 100%; margin-bottom: 15px; font-family: inherit; }
 
         /* BOTONES */
-        .btn { background: var(--neon); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px; font-size: 0.8rem; text-transform: uppercase;}
-        .btn:disabled { background: #333; color: #666; }
+        .btn { 
+            background: var(--neon); color: #000; border: none; padding: 12px; 
+            border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; 
+            margin-top: 5px; font-size: 0.8rem; text-transform: uppercase;
+        }
+        .btn-search { background: var(--gold); color: #000; }
+        .btn-google { background: #4285F4; color: white; }
 
-        /* DEX GRID */
-        .pull-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
-        .card-item { position: relative; cursor: pointer; }
-        .card-item img { width: 100%; border-radius: 5px; border: 2px solid transparent; transition: 0.2s; }
-        .card-item.selected img { border-color: var(--gold); box-shadow: 0 0 10px var(--gold); }
-        .badge { position: absolute; top: -5px; right: -5px; background: var(--red); color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; display: flex; align-items: center; justify-content: center; z-index: 5; border: 1px solid white; }
+        /* FORMULARIOS */
+        input { 
+            width: calc(100% - 24px); padding: 12px; background: #222; 
+            border: 1px solid #444; color: white; border-radius: 8px; margin-bottom: 10px; 
+        }
 
-        /* OVERLAYS */
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
 <nav class="top-nav">
-    <button class="active" onclick="showTab('vf', this)"><i class="fas fa-microscope"></i> V/F Check</button>
-    <button onclick="showTab('packs', this)"><i class="fas fa-box-open"></i> Sobres</button>
-    <button onclick="showTab('dex', this)"><i class="fas fa-box-archive"></i> Mi Dex</button>
-    <button onclick="showTab('decks', this)"><i class="fas fa-layer-group"></i> Mazos</button>
-    <button onclick="showTab('val', this)"><i class="fas fa-search-dollar"></i> Precios</button>
+    <button class="active" onclick="showTab('search', this)"><i class="fas fa-search"></i> Buscador</button>
+    <button onclick="showTab('packs', this)"><i class="fas fa-box-open"></i> Abrir Sobres</button>
+    <button onclick="showTab('dex', this)"><i class="fas fa-book"></i> Mi Colección</button>
 </nav>
 
-<div id="pack-opening-overlay" class="overlay">
-    <div id="pack-tear-area" style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; touch-action: none;">
-        <img id="current-pack-img-overlay" src="" style="width: 200px; transition: transform 0.4s ease-in, opacity 0.3s;">
-        <div style="color: var(--neon); margin-top: 30px; font-weight: bold; animation: fadeIn 1s infinite alternate;">
-            <i class="fas fa-fingerprint"></i> DESLIZA ABAJO PARA ABRIR
-        </div>
-    </div>
-    <div id="card-reveal-area" style="display: none; width: 100%; height: 100%; flex-direction: column; justify-content: center; align-items: center;">
-        <img id="revealed-card" src="" style="width: 260px; border-radius: 12px; transition: transform 0.5s; cursor: pointer; filter: drop-shadow(0 0 20px var(--gold));">
-        <div id="pull-counter" style="color: white; margin-top: 20px; font-weight: bold;">Carta 1 de 6</div>
-    </div>
-    <div id="pack-loading" style="display: none; color: white;">
-        <div style="width: 40px; height: 40px; border: 4px solid #333; border-top-color: var(--neon); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px;"></div>
-        Buscando cartas únicas...
-    </div>
-</div>
-
-<div id="vision-container">
-    <video id="video" autoplay playsinline></video>
-    <canvas id="freeze-canvas" style="display:none"></canvas>
-    <img id="ghost-overlay" src="">
-    <div id="ai-scanner-ui">
-        <b id="ai-title" style="color:var(--neon)">AI DEEP SCANNING...</b>
-        <div id="ai-checks" style="margin-top:5px"></div>
-    </div>
-</div>
-
 <div class="content">
-    <div id="tab-vf" class="panel active-panel">
-        <input type="text" id="vfInput" placeholder="set/numero (ej: sv3pt5/151)" style="width:calc(100% - 26px); padding:12px; background:#222; border:1px solid #444; color:white; border-radius:8px; margin-bottom:10px">
-        <div style="display:flex; gap:10px; margin-bottom:10px">
-            <button class="btn" style="flex:1" onclick="prepScan('front')">FRONTAL</button>
-            <button class="btn" style="flex:1; background:#333; color:white" onclick="prepScan('back')">REVERSO</button>
+    
+    <div id="tab-search" class="panel active-panel">
+        <h3 style="color:var(--neon)">CONSULTA DE CARTAS</h3>
+        <p style="font-size:0.8rem; color:#888">Escribe el nombre de la carta para buscar precios e imágenes en la red.</p>
+        
+        <input type="text" id="mainSearch" placeholder="Ej: Charizard ex 151...">
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
+            <button class="btn btn-search" onclick="searchExternal('tcgplayer')">
+                <i class="fas fa-dollar-sign"></i> VER PRECIOS
+            </button>
+            <button class="btn btn-google" onclick="searchExternal('pokemon')">
+                <i class="fas fa-image"></i> VER IMAGEN
+            </button>
         </div>
-        <button id="btn-scan-ia" class="btn" style="display:none; background:var(--red); color:white" onclick="executeAIScan()">ESCANEAR AHORA</button>
-        <button id="btn-add-dex" class="btn" onclick="addToDexFinal()" style="display:none; background:var(--green)">¡AÑADIR A MI DEX!</button>
+
+        <div id="search-history" style="margin-top:20px">
+            <small style="color:var(--neon)">BÚSQUEDAS RECIENTES</small>
+            <div id="history-list"></div>
+        </div>
     </div>
 
     <div id="tab-packs" class="panel">
-        <div class="pack-display">
-            <small style="color:var(--green); margin-bottom:10px">MODO: SOBRES INFINITOS ACTIVADO</small>
-            <select id="set-selector" onchange="updatePackLogo()"></select>
-            <img src="" id="shop-pack-logo" class="pack-img">
-            <button class="btn" onclick="startPackOpening()">ABRIR SOBRE GRATIS</button>
+        <div class="card-card" style="flex-direction: column; text-align: center;">
+            <i class="fas fa-box-open fa-3x" style="color:var(--gold); margin-bottom:10px"></i>
+            <h3>SIMULADOR DE SOBRE</h3>
+            <p style="font-size:0.8rem">Al no usar APIs, registra aquí la carta que te salió físicamente para guardarla en tu Dex.</p>
+            <input type="text" id="newCardName" placeholder="Nombre de la carta...">
+            <button class="btn" onclick="registerCard()">REGISTRAR EN MI DEX</button>
         </div>
     </div>
 
     <div id="tab-dex" class="panel">
-        <div style="text-align:center; margin-bottom:15px; background:var(--panel); padding:10px; border-radius:8px">
-            Colección: <b id="dex-count" style="color:var(--neon)">0</b> cartas únicas
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
+            <h3 style="color:var(--neon)">MI DEX</h3>
+            <span id="card-count" style="background:var(--neon); color:#000; padding:2px 8px; border-radius:10px; font-weight:bold; font-size:0.8rem">0</span>
         </div>
-        <div id="dex-grid" class="pull-grid"></div>
+        <div id="dex-list">
+            </div>
+        <button class="btn" style="background:var(--red); color:white; margin-top:20px" onclick="clearDex()">BORRAR TODO</button>
     </div>
 
-    <div id="tab-decks" class="panel">
-        <div style="background:var(--panel); padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid var(--neon); display:flex; justify-content:space-between; align-items:center;">
-            <span>Mazo: <b id="deck-builder-count">0</b>/60</span>
-            <button class="btn" style="width:auto; margin:0; padding:5px 10px; background:var(--red); color:white" onclick="clearDeck()">VACIAR</button>
-        </div>
-        <div id="inventory-render" class="pull-grid" style="grid-template-columns: repeat(3, 1fr);"></div>
-    </div>
-
-    <div id="tab-val" class="panel">
-        <input type="text" id="priceInput" placeholder="Nombre (ej: Charizard) o ID (ej: sv3pt5-151)" style="width:calc(100% - 26px); padding:12px; background:#222; border:1px solid #444; color:white; border-radius:8px; margin-bottom:10px">
-        <button class="btn" onclick="searchRealPrice()">BUSCAR EN INTERNET</button>
-        <div id="price-res" style="margin-top:20px"></div>
-    </div>
 </div>
 
 <script>
-    let state = {
-        dex: JSON.parse(localStorage.getItem('pm_dex') || '[]'),
-        deck: JSON.parse(localStorage.getItem('pm_deck') || '[]'),
-        scanLock: { front: false, back: false, id: '' },
-        activePulls: [], currentPullIndex: 0
+    // ESTADO DE LA APP
+    let app = {
+        dex: JSON.parse(localStorage.getItem('pkm_dex_local') || '[]'),
+        history: JSON.parse(localStorage.getItem('pkm_history') || '[]')
     };
 
-    // --- CÁMARA ---
-    async function initCamera() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-            document.getElementById('video').srcObject = stream;
-        } catch (e) { console.error("Cámara no disponible"); }
-    }
+    // FUNCIÓN DE BÚSQUEDA EXTERNA (ELIMINA NECESIDAD DE API)
+    function searchExternal(platform) {
+        const query = document.getElementById('mainSearch').value.trim();
+        if(!query) return alert("Escribe el nombre de una carta");
 
-    // --- V/F CHECK ---
-    async function prepScan(mode) {
-        const id = document.getElementById('vfInput').value.trim().replace('/', '-');
-        if(!id) return alert("Escribe el ID (ej: sv3pt5-151)");
-        state.scanLock.id = id;
-        const ghost = document.getElementById('ghost-overlay');
-        ghost.style.display = 'block';
-        try {
-            const res = await fetch(`https://api.pokemontcg.io/v2/cards/${id}`);
-            const data = await res.json();
-            if(data.data) {
-                ghost.src = data.data.images.small;
-                document.getElementById('btn-scan-ia').style.display = 'block';
-                document.getElementById('btn-scan-ia').dataset.mode = mode;
-            }
-        } catch (e) { alert("Error de conexión"); }
-    }
+        saveHistory(query);
+        let url = "";
 
-    function executeAIScan() {
-        const btn = document.getElementById('btn-scan-ia');
-        btn.disabled = true; btn.innerText = "ANALIZANDO...";
-        document.getElementById('ai-scanner-ui').style.display = 'block';
-        document.getElementById('ai-checks').innerHTML = "<div>Verificando autenticidad...</div>";
-        setTimeout(() => {
-            state.scanLock[btn.dataset.mode] = true;
-            document.getElementById('ai-title').innerText = "✓ VALIDADO";
-            if(state.scanLock.front && state.scanLock.back) document.getElementById('btn-add-dex').style.display = 'block';
-            btn.disabled = false; btn.innerText = "ESCANEAR AHORA";
-        }, 1500);
-    }
-
-    function addToDexFinal() {
-        if(!state.dex.find(c => c.id === state.scanLock.id)) {
-            state.dex.push({ id: state.scanLock.id, img: `https://images.pokemontcg.io/${state.scanLock.id}_hires.png` });
-            saveData();
+        if(platform === 'tcgplayer') {
+            // Buscador directo de TCGPlayer
+            url = `https://www.tcgplayer.com/search/pokemon/product?q=${encodeURIComponent(query)}&view=grid`;
+        } else {
+            // Buscador en la web oficial de Pokémon España
+            url = `https://www.pokemon.com/es/jcc-pokemon/cartas-pokemon/?cardName=${encodeURIComponent(query)}`;
         }
-        alert("¡Guardada!"); resetVF();
+
+        window.open(url, '_blank');
     }
 
-    function resetVF() {
-        document.getElementById('ai-scanner-ui').style.display = 'none';
-        document.getElementById('btn-add-dex').style.display = 'none';
-        document.getElementById('ghost-overlay').style.display = 'none';
-        state.scanLock = { front: false, back: false, id: '' };
-    }
+    // REGISTRO LOCAL DE CARTAS
+    function registerCard() {
+        const name = document.getElementById('newCardName').value.trim();
+        if(!name) return alert("Escribe el nombre");
 
-    // --- SOBRES INFINITOS SIN REPETIDAS ---
-    async function startPackOpening() {
-        const setId = document.getElementById('set-selector').value;
-        const overlay = document.getElementById('pack-opening-overlay');
-        document.getElementById('pack-tear-area').style.display = 'flex';
-        document.getElementById('card-reveal-area').style.display = 'none';
-        document.getElementById('pack-loading').style.display = 'block';
-        overlay.style.display = 'flex';
-
-        try {
-            const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=set.id:${setId}&pageSize=250`);
-            const data = await res.json();
-            
-            // Filtro para NO REPETIDAS: Solo cartas que NO estén en la Dex
-            let pool = data.data.filter(card => !state.dex.find(d => d.id === card.id));
-            
-            // Si ya tienes todas, permite repetidas para no romper el juego
-            if(pool.length < 6) pool = data.data;
-
-            const shuffled = pool.sort(() => 0.5 - Math.random());
-            state.activePulls = shuffled.slice(0, 6).map(c => ({ id: c.id, img: c.images.large }));
-            
-            document.getElementById('pack-loading').style.display = 'none';
-            setupGestures();
-        } catch (e) { overlay.style.display = 'none'; alert("Error al cargar cartas"); }
-    }
-
-    function setupGestures() {
-        const area = document.getElementById('pack-tear-area');
-        let startY = 0;
-        area.ontouchstart = (e) => startY = e.touches[0].clientY;
-        area.ontouchmove = (e) => {
-            if(e.touches[0].clientY - startY > 50) {
-                area.ontouchmove = null;
-                document.getElementById('current-pack-img-overlay').style.transform = "translateY(600px) rotate(15deg)";
-                setTimeout(() => {
-                    area.style.display = 'none';
-                    state.currentPullIndex = 0;
-                    showNextCard();
-                }, 400);
-            }
+        const newCard = {
+            id: Date.now(),
+            name: name,
+            date: new Date().toLocaleDateString()
         };
-        area.onclick = () => { // Click para PC
-            document.getElementById('current-pack-img-overlay').style.transform = "translateY(600px)";
-            setTimeout(() => { area.style.display = 'none'; state.currentPullIndex = 0; showNextCard(); }, 400);
-        };
+
+        app.dex.push(newCard);
+        updateStorage();
+        renderDex();
+        document.getElementById('newCardName').value = "";
+        alert("¡Carta guardada!");
     }
 
-    function showNextCard() {
-        if(state.currentPullIndex >= state.activePulls.length) {
-            saveData(); document.getElementById('pack-opening-overlay').style.display = 'none';
-            return renderDex();
-        }
-        const card = state.activePulls[state.currentPullIndex];
-        if(!state.dex.find(d => d.id === card.id)) state.dex.push(card);
-        
-        const img = document.getElementById('revealed-card');
-        img.src = card.img;
-        document.getElementById('card-reveal-area').style.display = 'flex';
-        document.getElementById('pull-counter').innerText = `Carta ${state.currentPullIndex + 1} de 6`;
-        state.currentPullIndex++;
-        img.onclick = () => showNextCard();
-    }
-
-    // --- BÚSQUEDA DE PRECIOS MEJORADA ---
-    async function searchRealPrice() {
-        const input = document.getElementById('priceInput').value.trim();
-        if(!input) return;
-        const resDiv = document.getElementById('price-res');
-        resDiv.innerHTML = "<div style='color:var(--neon)'>Buscando en TCGPlayer...</div>";
-
-        try {
-            // Intento 1: Búsqueda exacta por ID o Nombre
-            let query = input.includes('-') ? `id:"${input}"` : `name:"${input}*"`;
-            let res = await fetch(`https://api.pokemontcg.io/v2/cards?q=${query}&orderBy=-set.releaseDate&pageSize=10`);
-            let data = await res.json();
-
-            // Intento 2: Si no hay resultados, buscar solo por nombre (falla de conexión arreglada)
-            if(!data.data || data.data.length === 0) {
-                resDiv.innerHTML = "<div style='color:var(--gold)'>Afinando búsqueda...</div>";
-                let simpleName = input.split(/[- #]/)[0];
-                res = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:"${simpleName}*"&pageSize=10`);
-                data = await res.json();
-            }
-
-            if(data.data.length === 0) throw new Error();
-
-            resDiv.innerHTML = data.data.map(c => `
-                <div style="background:var(--panel); padding:10px; border-radius:10px; margin-bottom:8px; display:flex; align-items:center; gap:10px; border:1px solid #333">
-                    <img src="${c.images.small}" style="width:50px">
-                    <div style="flex:1">
-                        <div style="font-weight:bold; font-size:0.8rem">${c.name}</div>
-                        <div style="color:var(--green)">$${c.tcgplayer?.prices?.holofoil?.market || c.tcgplayer?.prices?.normal?.market || '?.??'} USD</div>
-                    </div>
-                    <a href="${c.tcgplayer?.url || '#'}" target="_blank" style="color:var(--neon)"><i class="fas fa-external-link-alt"></i></a>
-                </div>
-            `).join('');
-
-        } catch (e) { resDiv.innerHTML = "<div style='color:var(--red)'>No se encontró la carta. Intenta solo el nombre.</div>"; }
-    }
-
-    // --- SISTEMA ---
-    function saveData() { localStorage.setItem('pm_dex', JSON.stringify(state.dex)); localStorage.setItem('pm_deck', JSON.stringify(state.deck)); }
-    
+    // RENDERIZADO DE COLECCIÓN
     function renderDex() {
-        document.getElementById('dex-count').innerText = state.dex.length;
-        document.getElementById('dex-grid').innerHTML = state.dex.map(c => `<div class="card-item"><img src="${c.img}"></div>`).join('');
+        const container = document.getElementById('dex-list');
+        const countLabel = document.getElementById('card-count');
+        
+        container.innerHTML = app.dex.length === 0 ? '<p style="text-align:center; color:#555">No tienes cartas registradas.</p>' : '';
+        countLabel.innerText = app.dex.length;
+
+        app.dex.slice().reverse().forEach(card => {
+            const div = document.createElement('div');
+            div.className = 'card-card';
+            div.innerHTML = `
+                <div style="background:var(--neon); width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#000">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <div style="flex:1">
+                    <div style="font-weight:bold">${card.name}</div>
+                    <div style="font-size:0.7rem; color:#888">Registrada: ${card.date}</div>
+                </div>
+                <button onclick="deleteCard(${card.id})" style="background:none; border:none; color:var(--red); cursor:pointer">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    // GESTIÓN DE HISTORIAL
+    function saveHistory(q) {
+        if(!app.history.includes(q)) {
+            app.history.unshift(q);
+            if(app.history.length > 5) app.history.pop();
+            updateStorage();
+            renderHistory();
+        }
+    }
+
+    function renderHistory() {
+        const list = document.getElementById('history-list');
+        list.innerHTML = app.history.map(h => `
+            <div style="display:inline-block; background:#222; padding:5px 10px; border-radius:15px; margin:5px 5px 0 0; font-size:0.7rem; cursor:pointer" onclick="fillSearch('${h}')">
+                ${h}
+            </div>
+        `).join('');
+    }
+
+    function fillSearch(val) {
+        document.getElementById('mainSearch').value = val;
+    }
+
+    // UTILIDADES
+    function deleteCard(id) {
+        app.dex = app.dex.filter(c => c.id !== id);
+        updateStorage();
+        renderDex();
+    }
+
+    function clearDex() {
+        if(confirm("¿Seguro que quieres borrar toda tu colección?")) {
+            app.dex = [];
+            updateStorage();
+            renderDex();
+        }
+    }
+
+    function updateStorage() {
+        localStorage.setItem('pkm_dex_local', JSON.stringify(app.dex));
+        localStorage.setItem('pkm_history', JSON.stringify(app.history));
     }
 
     function showTab(tabId, btn) {
@@ -324,48 +222,13 @@
         document.querySelectorAll('.top-nav button').forEach(b => b.classList.remove('active'));
         document.getElementById('tab-' + tabId).classList.add('active-panel');
         btn.classList.add('active');
-        document.getElementById('vision-container').style.display = (tabId === 'vf') ? 'block' : 'none';
-        if(tabId === 'dex') renderDex();
-        if(tabId === 'decks') renderDeckBuilder();
     }
 
-    function renderDeckBuilder() {
-        const grid = document.getElementById('inventory-render');
-        grid.innerHTML = state.dex.map(card => {
-            const count = state.deck.filter(c => c.id === card.id).length;
-            return `
-                <div class="card-item ${count > 0 ? 'selected' : ''}" onclick="toggleDeck('${card.id}', '${card.img}')">
-                    <img src="${card.img}">
-                    ${count > 0 ? `<div class="badge">${count}</div>` : ''}
-                </div>`;
-        }).join('');
-        document.getElementById('deck-builder-count').innerText = state.deck.length;
-    }
-
-    function toggleDeck(id, img) {
-        const idx = state.deck.findIndex(c => c.id === id);
-        if(state.deck.length < 60) state.deck.push({id, img});
-        else if(idx > -1) state.deck.splice(idx, 1);
-        saveData(); renderDeckBuilder();
-    }
-
-    function clearDeck() { state.deck = []; saveData(); renderDeckBuilder(); }
-
-    async function loadSets() {
-        const res = await fetch('https://api.pokemontcg.io/v2/sets?orderBy=-releaseDate');
-        const data = await res.json();
-        const sel = document.getElementById('set-selector');
-        sel.innerHTML = data.data.map(s => `<option value="${s.id}" data-logo="${s.images.logo}">${s.name}</option>`).join('');
-        updatePackLogo();
-    }
-
-    function updatePackLogo() {
-        const sel = document.getElementById('set-selector');
-        document.getElementById('shop-pack-logo').src = sel.options[sel.selectedIndex].dataset.logo;
-        document.getElementById('current-pack-img-overlay').src = sel.options[sel.selectedIndex].dataset.logo;
-    }
-
-    window.onload = () => { initCamera(); loadSets(); renderDex(); };
+    window.onload = () => {
+        renderDex();
+        renderHistory();
+    };
 </script>
+
 </body>
 </html>
